@@ -291,5 +291,4 @@ def create_overview_plot(input_file: str | os.PathLike, output_path: str | os.Pa
     fig = plot_labels(fig, input_file)
 
     utils.show_plot(fig, output_path)
-
-create_overview_plot(parameters.FASTA_INPUT_FILE, parameters.OUTPUT_FOLDER)
+    
