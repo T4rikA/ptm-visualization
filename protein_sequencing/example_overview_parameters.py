@@ -6,7 +6,6 @@ FIGURE_HEIGHT = 1000
 FONT_SIZE = 12
 
 # Sequence Settings
-# First sequence is from (1, 44), second from (45, 73) and so on
 REGIONS = [
     ('', 44, 'A'),
     ('N1', 73, 'B'),
@@ -23,16 +22,15 @@ REGIONS = [
 # Modification Settings
 MODIFICATIONS = {
     'Phospho': ('Phosphorylation', '#000000', 'A'),
-    'Acetyl': ('Acetylation', '#FF08FF', 'A'),
-    'GG': ('Ubiquitination', '#0C0CFF', 'A'),
+    'Acetyl': ('Acetylation', '#93478F', 'B'),
+    'Methyl': ('Methylation', '#C35728', 'B'),
+    'GG': ('Ubiquitination', '#7AB77C', 'B'),
+    'Citrullination': ('Citrullination', '#FF17E3', 'B'),
 }
 
 EXCLUDED_MODIFICATIONS = {'Q': None,
                           'X': None,
                           'S': ['GG']}
-
-# Neuropathology Settings
-NEUROPATHOLOGIES = ['HMW', 'HMWC']
 
 # Input Output Settings
 FASTA_INPUT_FILE = 'data/uniprot_data/tau_isoforms2N4R.fasta'
@@ -43,8 +41,8 @@ OUTPUT_FOLDER = 'output'
 FONT = 'Arial'
 
 # Margins
-LEFT_MARGIN = 0.04
-RIGHT_MARGIN = 0.04
+LEFT_MARGIN = 0.025
+RIGHT_MARGIN = 0.025
 TOP_MARGIN = 0.025
 BOTTOM_MARGIN = 0.025
 

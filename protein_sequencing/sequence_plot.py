@@ -1,11 +1,8 @@
-from collections import defaultdict
-import time
 import plotly.graph_objects as go
 import os
 from protein_sequencing import utils
 import uniprot_align
 import parameters
-import numpy as np
 
 def create_plot(input_file: str | os.PathLike) -> go.Figure:
 

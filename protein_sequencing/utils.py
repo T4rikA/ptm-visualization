@@ -60,6 +60,30 @@ def different_possibilities_plot(width: int, height: int, different_possibilitie
     fig = go.Figure(data=go.Heatmap(z=rectangle))
     fig.show()
 
+def get_modifications_per_position(input_file):
+    with open(input_file, 'r') as f:
+      rows = f.readlines()[1:3]
+      modification_types = rows[0].strip().split(',')
+      labels = rows[1].strip().split(',')
+
+      modifications_by_position = defaultdict(list)
+      for i, (label) in enumerate(labels):
+         if label == '':
+            continue
+         position = int(label[1:])
+         letter = label[0]
+         if letter in parameters.EXCLUDED_MODIFICATIONS:
+               if parameters.EXCLUDED_MODIFICATIONS[letter] is None:
+                  continue
+               if modification_types[i] in parameters.EXCLUDED_MODIFICATIONS[letter]:
+                  continue
+         if modification_types[i] not in parameters.MODIFICATIONS:
+            continue
+         modifications_by_position[position].append((label, modification_types[i], parameters.MODIFICATIONS[modification_types[i]][2]))
+      for position, mods in modifications_by_position.items():
+         modifications_by_position[position] = list(set(mods))
+    return modifications_by_position
+
 def clean_up():
     directory = 'data/tmp'
 

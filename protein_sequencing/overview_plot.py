@@ -15,22 +15,7 @@ def plot_labels(fig, file_path):
         modification_types = rows[0].strip().split(',')
         labels = rows[1].strip().split(',')
 
-        modifications_by_position = defaultdict(list)
-        for i, (label) in enumerate(labels):
-            if label == '':
-                continue
-            position = int(label[1:])
-            letter = label[0]
-            if letter in parameters.EXCLUDED_MODIFICATIONS:
-                if parameters.EXCLUDED_MODIFICATIONS[letter] is None:
-                    continue
-                if modification_types[i] in parameters.EXCLUDED_MODIFICATIONS[letter]:
-                    continue
-            if modification_types[i] not in parameters.MODIFICATIONS:
-                continue
-            modifications_by_position[position].append((label, modification_types[i], parameters.MODIFICATIONS[modification_types[i]][2]))
-        for position, mods in modifications_by_position.items():
-            modifications_by_position[position] = list(set(mods))
+        modifications_by_position = utils.get_modifications_per_position(file_path)
 
         label_offsets_with_orientation = get_label_offsets_with_orientation(modifications_by_position, utils.PIXELS_PER_PROTEIN)
         for protein_position in label_offsets_with_orientation.keys():
@@ -119,7 +104,6 @@ def get_distance_groups(group, pixels_per_protein):
         result.append((1, {last_sight['position']: [last_sight['mod']]}))
     return result
 
-# TODO refactor
 def get_offsets_with_orientations(distance_group, label_offsets_with_orientation, group_label, nearest_left, nearest_right):
     nearest_left_offset = 0
     nearest_right_offset = 0
@@ -291,4 +275,6 @@ def create_overview_plot(input_file: str | os.PathLike, output_path: str | os.Pa
     fig = plot_labels(fig, input_file)
 
     utils.show_plot(fig, output_path)
+
+create_overview_plot(parameters.FASTA_INPUT_FILE, parameters.OUTPUT_FOLDER)
     
