@@ -5,7 +5,8 @@ import plotly.graph_objects as go
 import numpy as np
 from protein_sequencing import parameters
 
-SEQUENCE_BOUNDARIES = (None, None, None, None)
+# x0, x1, y0, y1
+SEQUENCE_BOUNDARIES = {'x0': 0, 'x1': 0, 'y0': 0, 'y1': 0}
 PIXELS_PER_PROTEIN = 0
 SEQUENCE_OFFSET = 0
 
@@ -62,26 +63,25 @@ def different_possibilities_plot(width: int, height: int, different_possibilitie
 
 def get_modifications_per_position(input_file):
     with open(input_file, 'r') as f:
-      rows = f.readlines()[1:3]
-      modification_types = rows[0].strip().split(',')
-      labels = rows[1].strip().split(',')
-
-      modifications_by_position = defaultdict(list)
-      for i, (label) in enumerate(labels):
-         if label == '':
-            continue
-         position = int(label[1:])
-         letter = label[0]
-         if letter in parameters.EXCLUDED_MODIFICATIONS:
-               if parameters.EXCLUDED_MODIFICATIONS[letter] is None:
-                  continue
-               if modification_types[i] in parameters.EXCLUDED_MODIFICATIONS[letter]:
-                  continue
-         if modification_types[i] not in parameters.MODIFICATIONS:
-            continue
-         modifications_by_position[position].append((label, modification_types[i], parameters.MODIFICATIONS[modification_types[i]][2]))
-      for position, mods in modifications_by_position.items():
-         modifications_by_position[position] = list(set(mods))
+        rows = f.readlines()[1:3]
+        modification_types = rows[0].strip().split(',')
+        labels = rows[1].strip().split(',')
+        modifications_by_position = defaultdict(list)
+        for i, (label) in enumerate(labels):
+            if label == '':
+                continue
+            position = int(label[1:])
+            letter = label[0]
+            if letter in parameters.EXCLUDED_MODIFICATIONS:
+                if parameters.EXCLUDED_MODIFICATIONS[letter] is None:
+                    continue
+                if modification_types[i] in parameters.EXCLUDED_MODIFICATIONS[letter]:
+                    continue
+            if modification_types[i] not in parameters.MODIFICATIONS:
+                continue
+            modifications_by_position[position].append((label, modification_types[i], parameters.MODIFICATIONS[modification_types[i]][2]))
+        for position, mods in modifications_by_position.items():
+            modifications_by_position[position] = list(set(mods))
     return modifications_by_position
 
 def clean_up():

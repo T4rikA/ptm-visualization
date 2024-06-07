@@ -1,4 +1,4 @@
-from protein_sequencing import parameters, overview_plot, label_plot
+from protein_sequencing import bar_plot, parameters, overview_plot
 
 
 

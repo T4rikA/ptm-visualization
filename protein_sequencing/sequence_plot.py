@@ -86,12 +86,15 @@ def create_sequence_plot(region_boundaries: list[tuple[str, int, int, str, int, 
 
     # Legend
     x_legend = 0 if parameters.FIGURE_ORIENTATION == 0 else width/2 + parameters.SEQUENCE_PLOT_HEIGHT
+    if parameters.FIGURE_ORIENTATION == 1:
+        fig.add_trace(go.Scatter(x=[x_legend], y=[height], mode='text', text="<b>Legend:</b>", textposition="bottom right", showlegend=False, hoverinfo='none', textfont=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="black")))
     for i, modification in enumerate(parameters.MODIFICATIONS.values()):
         y_legend = height/2 + parameters.SEQUENCE_PLOT_HEIGHT + i*utils.get_label_height()
         if parameters.FIGURE_ORIENTATION == 1:
-            y_legend = height - (i*utils.get_label_height()+1)
+            y_legend = height - ((i+1)*utils.get_label_height())
         fig.add_trace(go.Scatter(x=[x_legend], y=[y_legend], mode='text', text=modification[0], textposition="bottom right", showlegend=False, hoverinfo='none', textfont=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color=modification[1])))
-
+    if parameters.FIGURE_ORIENTATION == 0:
+        fig.add_trace(go.Scatter(x=[x_legend], y=[y_legend + utils.get_label_height()], mode='text', text="<b>Legend:</b>", textposition="bottom right", showlegend=False, hoverinfo='none', textfont=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="black")))
     # Sequence
     fig = plot_sequence(fig, region_boundaries)
 
@@ -166,5 +169,5 @@ def plot_sequence(fig, region_boundaries):
         textangle= 0
     )
 
-    utils.SEQUENCE_BOUNDARIES = (x0, x1, y0, y1)
+    utils.SEQUENCE_BOUNDARIES = {'x0': x0, 'x1': x1, 'y0': y0, 'y1': y1}
     return fig

@@ -34,6 +34,9 @@ EXCLUDED_MODIFICATIONS = {'Q': None,
 # Neuropathology Settings
 NEUROPATHOLOGIES = ['HMW', 'HMWC']
 
+# Bar Plot Settings
+BAR_WIDTH = 15
+
 # Input Output Settings
 FASTA_INPUT_FILE = 'data/uniprot_data/tau_isoforms2N4R.fasta'
 OUTPUT_FOLDER = 'output'
@@ -43,8 +46,8 @@ OUTPUT_FOLDER = 'output'
 FONT = 'Arial'
 
 # Margins
-LEFT_MARGIN = 0.04
-RIGHT_MARGIN = 0.04
+LEFT_MARGIN = 0.025
+RIGHT_MARGIN = 0.025
 TOP_MARGIN = 0.025
 BOTTOM_MARGIN = 0.025
 
