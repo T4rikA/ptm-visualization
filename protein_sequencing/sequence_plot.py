@@ -101,18 +101,19 @@ def create_sequence_plot(region_boundaries: list[tuple[str, int, int, str, int, 
     return fig
 
 def plot_sequence(fig, region_boundaries):
+    sequence_x0, sequence_y0 = 0,0
     for i, (region_name, region_start_pixel, region_end_pixel, region_color, region_start, region_end) in enumerate(region_boundaries):
         
 
         if parameters.FIGURE_ORIENTATION == 0:
             x0 = region_start_pixel
             x1 = region_end_pixel
-            y0 = utils.get_height()/2 - parameters.SEQUENCE_PLOT_HEIGHT/2
+            y0 = utils.get_height()//2 - parameters.SEQUENCE_PLOT_HEIGHT//2
             y1 = y0+parameters.SEQUENCE_PLOT_HEIGHT
         else:
             y0 = utils.get_height() - region_start_pixel
             y1 = utils.get_height() - region_end_pixel
-            x0 = utils.get_width()/2 - parameters.SEQUENCE_PLOT_HEIGHT/2
+            x0 = utils.get_width()//2 - parameters.SEQUENCE_PLOT_HEIGHT//2
             x1 = x0+parameters.SEQUENCE_PLOT_HEIGHT
             
 
@@ -154,6 +155,7 @@ def plot_sequence(fig, region_boundaries):
                 font=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="gray"),
                 textangle= 0
             )
+            sequence_x0, sequence_y0 = x0, y0
     if parameters.FIGURE_ORIENTATION == 0:
         x = x1 + utils.get_label_length(str(region_end))
         y = y
@@ -169,5 +171,5 @@ def plot_sequence(fig, region_boundaries):
         textangle= 0
     )
 
-    utils.SEQUENCE_BOUNDARIES = {'x0': x0, 'x1': x1, 'y0': y0, 'y1': y1}
+    utils.SEQUENCE_BOUNDARIES = {'x0': sequence_x0, 'x1': x1, 'y0': sequence_y0, 'y1': y1}
     return fig

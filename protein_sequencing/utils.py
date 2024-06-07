@@ -21,24 +21,24 @@ def get_height():
     return parameters.FIGURE_WIDTH
 
 def get_left_margin():
-    return parameters.LEFT_MARGIN * get_width()
+    return int(parameters.LEFT_MARGIN * get_width())
 
 def get_top_margin(): 
-    return parameters.TOP_MARGIN * get_height()
+    return int(parameters.TOP_MARGIN * get_height())
 
 def get_right_margin():
-    return parameters.RIGHT_MARGIN * get_width()
+    return int(parameters.RIGHT_MARGIN * get_width())
 
 def get_bottom_margin():
-    return parameters.BOTTOM_MARGIN * get_height()
+    return int(parameters.BOTTOM_MARGIN * get_height())
 
 def get_label_length(label):
     if parameters.FIGURE_ORIENTATION == 1:
-        return parameters.FONT_SIZE/1.5 * len(label) + 4
-    return parameters.FONT_SIZE/1.5 * len(label)
+        return int(parameters.FONT_SIZE/1.5 * len(label) + 4)
+    return int(parameters.FONT_SIZE/1.5 * len(label))
 
 def get_label_height():
-    return parameters.FONT_SIZE+parameters.FONT_SIZE/4
+    return parameters.FONT_SIZE+parameters.FONT_SIZE//4
 
 def separate_by_group(groups_by_position):
     group_a = defaultdict(list)
