@@ -7,7 +7,7 @@ from queue import PriorityQueue
 from protein_sequencing import parameters, utils,sequence_plot
 
 
-def add_labels_to_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, list[tuple[int, str, str]]], modification_sights_relevant: dict[int, list[tuple[int, str, str]]], proportion_labels: int) -> go.Figure:
+def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, list[tuple[int, str, str]]], modification_sights_relevant: dict[int, list[tuple[int, str, str]]], df) -> go.Figure:
    group_direction = 1 if group == 'A' else -1
    group_size = 0
    positions = []
@@ -28,9 +28,16 @@ def add_labels_to_plot(fig: go.Figure, group: str, modification_sights_all: dict
    height_offset = 0
    max_offset = 0
    modifications_visited = 0
+   # TODO ask chris or henne if there is better way to do this
+   bar_percentages = {neuropathology: [] for neuropathology in parameters.NEUROPATHOLOGIES.keys()}
+   legends = {'A': {neuropathology: False for neuropathology in parameters.NEUROPATHOLOGIES.keys()},
+              'B': {neuropathology: False for neuropathology in parameters.NEUROPATHOLOGIES.keys()}}
+
    for protein_position in modification_sights_all.keys():
       for modification_sight in modification_sights_all[protein_position]:
          if modification_sight not in modification_sights_relevant[protein_position]:
+            for neuropathology in parameters.NEUROPATHOLOGIES.keys():
+               bar_percentages[neuropathology].append(0)
             modifications_visited += 1
             continue
          label, modification_type, modification_group = modification_sight
@@ -38,20 +45,79 @@ def add_labels_to_plot(fig: go.Figure, group: str, modification_sights_all: dict
             # x position for protein sequence
             x_0_line = protein_position * utils.PIXELS_PER_PROTEIN + utils.SEQUENCE_OFFSET
             # x position for bar plot
-            # TODO fix me
             x_1_line = modifications_visited * bar_width + bar_width//2 + utils.SEQUENCE_BOUNDARIES["x0"] 
             y_0_line = utils.SEQUENCE_BOUNDARIES['y1'] if group == 'A' else utils.SEQUENCE_BOUNDARIES['y0']
             y_1_line = y_0_line + group_direction * height_offset
             space_above_sequence = utils.get_height()-y_0_line if group == 'A' else y_0_line
-            y_3_line = y_0_line + space_above_sequence // proportion_labels * group_direction
+            space_per_group = space_above_sequence // len(df["Neuropathology"].unique())
+            y_3_line = y_0_line + (space_per_group  - (utils.get_label_length(label) + 5)) * group_direction
             y_2_line = y_3_line - 10 * group_direction
             y_label = y_3_line + (utils.get_label_length(label) // 2 + 5) * group_direction
+
+            # plot line with label
             plot_line_with_label(fig,
                                  x_0_line, x_1_line,
                                  y_0_line, y_1_line, y_2_line, y_3_line,
                                  y_label,
                                  parameters.MODIFICATIONS[modification_type][1],
                                  label)
+            y_bar = y_3_line + (utils.get_label_length(label) + 5) * group_direction
+            # -10 for margin above and below bars
+            max_bar_height = space_per_group - 10
+            # plot bars
+            for i, neuropathology in enumerate(parameters.NEUROPATHOLOGIES.keys()):
+               modification_column = [col for col in df.columns if col not in ['ID', 'Neuropathology'] and df[col].iloc[1] == label]
+               bar_df = df[['ID', 'Neuropathology'] + modification_column]
+               bar_df = bar_df[bar_df['Neuropathology'] == neuropathology]
+               values = bar_df.iloc[:, 2].astype(int)
+               percentage = values.mean()
+               height = max_bar_height * percentage
+               bar_percentages[neuropathology].append(percentage)
+               x0 = x_1_line - bar_width // 2
+               x1 = x_1_line + bar_width // 2
+               y0 = y_bar + (i * space_per_group + 5) * group_direction
+               y1 = y0 + height * group_direction
+
+               fig.add_shape(
+                  type="rect",
+                  x0=x0+1,
+                  y0=y0,
+                  x1=x1-1,
+                  y1=y1,
+                  line=dict(color="black", width=1),
+                  fillcolor=parameters.MODIFICATIONS[modification_type][1]
+               )
+
+               # plot legends
+               if not legends[modification_group][neuropathology]:
+                  legends[modification_group][neuropathology] = True
+                  y_group = y0
+                  fig.add_annotation(x = 10,
+                                     y= y_group + space_per_group//2 * group_direction,
+                                     width=space_per_group,
+                                     text=parameters.NEUROPATHOLOGIES[neuropathology],
+                                     textangle=-90,
+                                     font=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="black"),
+                                     showarrow=False)
+                  for j in range(5):
+                     y_trace = y_group + max_bar_height//4 * j * group_direction
+                     fig.add_trace(go.Scatter(x=[x0, utils.get_width()],
+                                              y=[y_trace, y_trace],
+                                              mode='lines',
+                                              line=dict(color='lightgray', width=1),
+                                              showlegend=False,
+                                              hoverinfo='none')
+                                              )
+                     if j % 2 == 0:
+                        text = str(j*25) + '%'
+                        fig.add_annotation(x=x0-5-utils.get_label_length(text),
+                                           y=y_trace,
+                                           width=space_per_group,
+                                           text=text,
+                                           font=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="black"),
+                                           showarrow=False)
+                     
+
          else:
             pass
          modifications_visited += 1
@@ -98,11 +164,11 @@ def filter_relevant_modification_sights(helper_file: str):
       if column_modification in parameters.EXCLUDED_MODIFICATIONS.get(column_label, []):
          continue
       column_position = int(df[column][1][1:])
-      all_modification_sights[column_position].append((df[column][1], column_modification, 'A'))
+      all_modification_sights[column_position].append((df[column][1], column_modification, parameters.MODIFICATIONS[column_modification][2]))
 
    # remove rows where Neuropathology is not in parameters.Neurpathologies
    header_rows = df.iloc[:4, :]
-   df = df[df['Neuropathology'].isin(parameters.NEUROPATHOLOGIES)]
+   df = df[df['Neuropathology'].isin(parameters.NEUROPATHOLOGIES.keys())]
    df = pd.concat([header_rows, df], ignore_index=True)
 
    # filter out columns that have no modifications observed for relevant neuropathologies
@@ -123,7 +189,7 @@ def filter_relevant_modification_sights(helper_file: str):
       if column_modification in parameters.EXCLUDED_MODIFICATIONS.get(column_label, []):
          continue
       column_position = int(df[column][1][1:])
-      relevant_modification_sights[column_position].append((df[column][1], column_modification, 'A'))
+      relevant_modification_sights[column_position].append((df[column][1], column_modification, parameters.MODIFICATIONS[column_modification][2]))
    return all_modification_sights, relevant_modification_sights, df
 
 
@@ -136,9 +202,7 @@ def create_label_plot(input_file: str | os.PathLike, output_path: str | os.PathL
    group_a_all, group_b_all = utils.separate_by_group(all_positions)
    group_a_relevant, group_b_relevant = utils.separate_by_group(relevant_positions)
    for (group_label, group_all, group_relevant) in [('A', group_a_all, group_a_relevant), ('B', group_b_all, group_b_relevant)]:
-      fig = add_labels_to_plot(fig, group_label, group_all, group_relevant, len(df['Neuropathology'].unique()))
-      for value in df['Neuropathology'].unique():
-         pass
+      fig = add_bar_plot(fig, group_label, group_all, group_relevant, df)
    
 
    utils.show_plot(fig, output_path)

@@ -32,7 +32,8 @@ EXCLUDED_MODIFICATIONS = {'Q': None,
                           'S': ['GG']}
 
 # Neuropathology Settings
-NEUROPATHOLOGIES = ['HMW', 'HMWC']
+NEUROPATHOLOGIES = {'HMWC': 'HMW <br>Wessling et al. <br>identified',
+                    'HMW': 'HMW <br>Patient <br>frequency',}
 
 # Bar Plot Settings
 MIN_BAR_WIDTH = 12
@@ -45,8 +46,8 @@ OUTPUT_FOLDER = 'output'
 # Default Parameters
 FONT = 'Arial'
 
-# Margins
-LEFT_MARGIN = 0.025
+# Margins for sequence Plot
+LEFT_MARGIN = 0.045
 RIGHT_MARGIN = 0.025
 TOP_MARGIN = 0.025
 BOTTOM_MARGIN = 0.025
