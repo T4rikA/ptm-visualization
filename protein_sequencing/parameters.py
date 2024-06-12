@@ -3,7 +3,7 @@ FIGURE_ORIENTATION = 0  # 0 for horizontal, 1 for vertical, note figure height a
 FIGURE_WIDTH = 1500
 FIGURE_HEIGHT = 1000
 
-FONT_SIZE = 12
+FONT_SIZE = 11
 
 # Sequence Settings
 # First sequence is from (1, 44), second from (45, 73) and so on
@@ -35,7 +35,7 @@ EXCLUDED_MODIFICATIONS = {'Q': None,
 NEUROPATHOLOGIES = ['HMW', 'HMWC']
 
 # Bar Plot Settings
-BAR_WIDTH = 15
+MIN_BAR_WIDTH = 12
 
 # Input Output Settings
 FASTA_INPUT_FILE = 'data/uniprot_data/tau_isoforms2N4R.fasta'
