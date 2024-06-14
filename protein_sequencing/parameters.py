@@ -24,7 +24,7 @@ REGIONS = [
 MODIFICATIONS = {
     'Phospho': ('Phosphorylation', '#000000', 'A'),
     'Acetyl': ('Acetylation', '#FF08FF', 'A'),
-    'GG': ('Ubiquitination', '#0C0CFF', 'B'),
+    'GG': ('Ubiquitination', '#0C0CFF', 'A'),
 }
 
 EXCLUDED_MODIFICATIONS = {'Q': None,
@@ -38,6 +38,7 @@ NEUROPATHOLOGIES = {'HMWC': 'HMW <br>Wessling et al. <br>identified',
 
 # Bar Plot Settings
 MIN_BAR_WIDTH = 12
+INVERT_AXIS_GROUP_B = False
 
 # Input Output Settings
 FASTA_INPUT_FILE = 'data/uniprot_data/tau_isoforms2N4R.fasta'

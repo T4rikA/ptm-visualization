@@ -67,8 +67,8 @@ def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, 
             
             space_above_sequence = utils.get_height()-y_0_line if group == 'A' else y_0_line
             space_per_neuropathalogy = (space_above_sequence - label_plot_height)  // (len(df["Neuropathology"].unique())-1)
-            # -10 for margin above and below bars
-            max_bar_height = space_per_neuropathalogy - 10
+            bar_plot_margin = parameters.FONT_SIZE
+            max_bar_height = space_per_neuropathalogy - 2*bar_plot_margin
             # plot bars
             for i, neuropathology in enumerate(parameters.NEUROPATHOLOGIES.keys()):
                modification_column = [col for col in df.columns if col not in ['ID', 'Neuropathology'] and df[col].iloc[1] == label]
@@ -82,6 +82,9 @@ def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, 
                x1 = x_1_line + bar_width // 2
                y0 = y_bar + (i * space_per_neuropathalogy + 5) * group_direction
                y1 = y0 + height * group_direction
+               if parameters.INVERT_AXIS_GROUP_B and group == 'B':
+                  y0 = y_bar + (i * space_per_neuropathalogy + 5 + max_bar_height) * group_direction
+                  y1 = y0 - height * group_direction
 
                fig.add_shape(
                   type="rect",
@@ -117,7 +120,12 @@ def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, 
                             font=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="black"),
                             showarrow=False)
          for j in range(5):
-            y_trace = y_group + max_bar_height//4 * j * group_direction
+            if j == 0:
+               y_trace = y_group
+            elif j == 4:
+               y_trace = y_group + max_bar_height * group_direction
+            else:
+               y_trace = y_group + round(max_bar_height/4, 1) * j * group_direction
             fig.add_trace(go.Scatter(x=[x_line_start, x_line_start+bar_plot_width],
                                      y=[y_trace, y_trace],
                                      mode='lines',
@@ -126,7 +134,9 @@ def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, 
                                      hoverinfo='none'))
             if j % 2 == 0:
                text = str(j*25) + '%'
-               fig.add_annotation(x=x_line_start-utils.get_label_length(text)//2,
+               if parameters.INVERT_AXIS_GROUP_B and group == 'B':
+                  text = str(100-j*25) + '%'
+               fig.add_annotation(x=x_line_start-utils.get_label_length(text)//2-5,
                                     y=y_trace,
                                     text=text,
                                     font=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="black"),
