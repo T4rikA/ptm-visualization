@@ -1,8 +1,6 @@
 import plotly.graph_objects as go
 import os
-from protein_sequencing import utils
-import uniprot_align
-import parameters
+from protein_sequencing import utils, uniprot_align, parameters
 
 def create_plot(input_file: str | os.PathLike, groups_missing = None) -> go.Figure:
 

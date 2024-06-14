@@ -37,7 +37,7 @@ def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, 
    # TODO ask chris or henne if there is better way to do this
    bar_percentages = {neuropathology: [] for neuropathology in parameters.NEUROPATHOLOGIES.keys()}
 
-   for protein_position in modification_sights_all.keys():
+   for protein_position in sorted(modification_sights_all.keys(), reverse=True):
       for modification_sight in modification_sights_all[protein_position]:
          if modification_sight not in modification_sights_relevant[protein_position]:
             for neuropathology in parameters.NEUROPATHOLOGIES.keys():
@@ -49,7 +49,7 @@ def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, 
             # x position for protein sequence
             x_0_line = protein_position * utils.PIXELS_PER_PROTEIN + utils.SEQUENCE_OFFSET
             # x position for bar plot
-            x_1_line = modifications_visited * bar_width + bar_width//2 + utils.SEQUENCE_BOUNDARIES["x0"] 
+            x_1_line = utils.get_width() - (modifications_visited * bar_width + bar_width//2)
             y_0_line = utils.SEQUENCE_BOUNDARIES['y1'] if group == 'A' else utils.SEQUENCE_BOUNDARIES['y0']
             y_1_line = y_0_line + group_direction * height_offset
             y_3_line = y_0_line + label_plot_height * group_direction - (utils.get_label_length(label) + 10) * group_direction
@@ -108,7 +108,8 @@ def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, 
    if parameters.FIGURE_ORIENTATION == 0:
       for i, neuropathology in enumerate(parameters.NEUROPATHOLOGIES.keys()):
          y_group = y_bar + (i * space_per_neuropathalogy + 5) * group_direction
-         fig.add_annotation(x = utils.SEQUENCE_BOUNDARIES['x0'] - (max_line_breaks+1) * utils.get_label_height() * 0.75 - utils.get_label_length('100%'),
+         x_line_start = utils.get_width()-bar_plot_width
+         fig.add_annotation(x=x_line_start-utils.get_label_length('100%')-(max_line_breaks+1)*utils.get_label_height(),
                             y = y_group + space_per_neuropathalogy//2 * group_direction,
                             width=space_per_neuropathalogy,
                             text=parameters.NEUROPATHOLOGIES[neuropathology],
@@ -117,7 +118,7 @@ def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, 
                             showarrow=False)
          for j in range(5):
             y_trace = y_group + max_bar_height//4 * j * group_direction
-            fig.add_trace(go.Scatter(x=[utils.SEQUENCE_BOUNDARIES["x0"], utils.SEQUENCE_BOUNDARIES["x0"]+bar_plot_width],
+            fig.add_trace(go.Scatter(x=[x_line_start, x_line_start+bar_plot_width],
                                      y=[y_trace, y_trace],
                                      mode='lines',
                                      line=dict(color='lightgray', width=1),
@@ -125,7 +126,7 @@ def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, 
                                      hoverinfo='none'))
             if j % 2 == 0:
                text = str(j*25) + '%'
-               fig.add_annotation(x=utils.SEQUENCE_BOUNDARIES["x0"]-utils.get_label_length(text),
+               fig.add_annotation(x=x_line_start-utils.get_label_length(text)//2,
                                     y=y_trace,
                                     text=text,
                                     font=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="black"),
