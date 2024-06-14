@@ -88,16 +88,16 @@ def create_sequence_plot(region_boundaries: list[tuple[str, int, int, str, int, 
     if groups_missing:
         if groups_missing == 'A':
             if parameters.FIGURE_ORIENTATION == 1:
-                x_legend = parameters.SEQUENCE_PLOT_HEIGHT
-            else:
-                y_legend = height - parameters.SEQUENCE_PLOT_HEIGHT
-        if groups_missing == 'B':
-            if parameters.FIGURE_ORIENTATION == 1:
                 longest_text = 'Legend:'
                 for mod in parameters.MODIFICATIONS:
                     if len(parameters.MODIFICATIONS[mod][0]) > len(longest_text):
                         longest_text = parameters.MODIFICATIONS[mod][0]
                 x_legend =  width - parameters.SEQUENCE_PLOT_HEIGHT - utils.get_label_length(longest_text)
+            else:
+                y_legend = height - parameters.SEQUENCE_PLOT_HEIGHT
+        if groups_missing == 'B':
+            if parameters.FIGURE_ORIENTATION == 1:
+                x_legend = parameters.SEQUENCE_PLOT_HEIGHT
             else:
                 y_legend = parameters.SEQUENCE_PLOT_HEIGHT + (len(parameters.MODIFICATIONS.keys())+1) * utils.get_label_height()
 
@@ -129,9 +129,9 @@ def plot_sequence(fig, region_boundaries, groups_missing):
     else:
         x0 = utils.get_width()//2 - parameters.SEQUENCE_PLOT_HEIGHT//2
         if groups_missing:
-            if groups_missing == 'A':
-                x0 = 0
             if groups_missing == 'B':
+                x0 = 0
+            if groups_missing == 'A':
                 x0 = utils.get_width() - parameters.SEQUENCE_PLOT_HEIGHT
         x1 = x0+parameters.SEQUENCE_PLOT_HEIGHT
 
