@@ -24,7 +24,7 @@ REGIONS = [
 MODIFICATIONS = {
     'Phospho': ('Phosphorylation', '#000000', 'A'),
     'Acetyl': ('Acetylation', '#FF08FF', 'A'),
-    'GG': ('Ubiquitination', '#0C0CFF', 'A'),
+    'GG': ('Ubiquitination', '#0C0CFF', 'B'),
 }
 
 EXCLUDED_MODIFICATIONS = {'Q': None,
@@ -33,7 +33,8 @@ EXCLUDED_MODIFICATIONS = {'Q': None,
 
 # Neuropathology Settings
 NEUROPATHOLOGIES = {'HMWC': 'HMW <br>Wessling et al. <br>identified',
-                    'HMW': 'HMW <br>Patient <br>frequency',}
+                    'HMW': 'HMW <br>Patient <br>frequency',
+                }
 
 # Bar Plot Settings
 MIN_BAR_WIDTH = 12
@@ -47,9 +48,10 @@ OUTPUT_FOLDER = 'output'
 FONT = 'Arial'
 
 # Margins for sequence Plot
-LEFT_MARGIN = 0.045
+# TODO remove margins and auto calculate based on legend
+LEFT_MARGIN = 0.055
 RIGHT_MARGIN = 0.025
-TOP_MARGIN = 0.025
+TOP_MARGIN = 0.055
 BOTTOM_MARGIN = 0.025
 
 # Sequence Plot

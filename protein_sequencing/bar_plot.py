@@ -6,32 +6,36 @@ from queue import PriorityQueue
 
 from protein_sequencing import parameters, utils,sequence_plot
 
+def get_bar_positions(modification_sights_all_A: dict[int, list[tuple[int, str, str]]], modification_sights_all_B: dict[int, list[tuple[int, str, str]]]):
+   positions_A = []
+   positions_B = []
+   for protein_position in modification_sights_all_A.keys():
+      for modification_sight in modification_sights_all_A[protein_position]:
+         positions_A.append(protein_position)
+   for protein_position in modification_sights_all_B.keys():
+      for modification_sight in modification_sights_all_B[protein_position]:
+         positions_B.append(protein_position)
 
-def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, list[tuple[int, str, str]]], modification_sights_relevant: dict[int, list[tuple[int, str, str]]], df) -> go.Figure:
-   group_direction = 1 if group == 'A' else -1
-   group_size = 0
-   positions = []
-   for protein_position in modification_sights_all.keys():
-      for modification_sight in modification_sights_all[protein_position]:
-         positions.append(protein_position)
-         group_size += 1
-   if group_size == 0:
-      return fig
+   return positions_A, positions_B
 
+def get_bar_plot_width(group_size_A: int, group_size_B: int):
    if parameters.FIGURE_ORIENTATION == 0:
-      max_num_bars = (utils.get_width() - utils.SEQUENCE_BOUNDARIES["x0"]) // parameters.MIN_BAR_WIDTH
-      assert max_num_bars >= group_size
-      bar_width = (utils.get_width() - utils.SEQUENCE_BOUNDARIES["x0"]) // group_size
+      bar_width = (utils.get_width() - utils.SEQUENCE_BOUNDARIES["x0"]) // max(group_size_A, group_size_B)
+      bar_plot_width = bar_width * max(group_size_A, group_size_B)
    else:
-      pass
+      bar_width = (utils.get_height() - utils.SEQUENCE_BOUNDARIES["y0"]) // max(group_size_A, group_size_B)
+      bar_plot_width = bar_width * max(group_size_A, group_size_B)
+   return bar_plot_width
+
+
+def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, list[tuple[int, str, str]]], modification_sights_relevant: dict[int, list[tuple[int, str, str]]], df, group_positions: list, bar_plot_width: int, label_plot_height: int) -> go.Figure:
+   group_direction = 1 if group == 'A' else -1
+   bar_width = bar_plot_width // len(group_positions)
 
    height_offset = 0
-   max_offset = 0
    modifications_visited = 0
    # TODO ask chris or henne if there is better way to do this
    bar_percentages = {neuropathology: [] for neuropathology in parameters.NEUROPATHOLOGIES.keys()}
-   legends = {'A': {neuropathology: False for neuropathology in parameters.NEUROPATHOLOGIES.keys()},
-              'B': {neuropathology: False for neuropathology in parameters.NEUROPATHOLOGIES.keys()}}
 
    for protein_position in modification_sights_all.keys():
       for modification_sight in modification_sights_all[protein_position]:
@@ -48,11 +52,10 @@ def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, 
             x_1_line = modifications_visited * bar_width + bar_width//2 + utils.SEQUENCE_BOUNDARIES["x0"] 
             y_0_line = utils.SEQUENCE_BOUNDARIES['y1'] if group == 'A' else utils.SEQUENCE_BOUNDARIES['y0']
             y_1_line = y_0_line + group_direction * height_offset
-            space_above_sequence = utils.get_height()-y_0_line if group == 'A' else y_0_line
-            space_per_group = space_above_sequence // len(df["Neuropathology"].unique())
-            y_3_line = y_0_line + (space_per_group  - (utils.get_label_length(label) + 5)) * group_direction
+            y_3_line = y_0_line + label_plot_height * group_direction - (utils.get_label_length(label) + 10) * group_direction
             y_2_line = y_3_line - 10 * group_direction
             y_label = y_3_line + (utils.get_label_length(label) // 2 + 5) * group_direction
+            y_bar = y_3_line + (utils.get_label_length(label) + 5) * group_direction
 
             # plot line with label
             plot_line_with_label(fig,
@@ -61,9 +64,11 @@ def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, 
                                  y_label,
                                  parameters.MODIFICATIONS[modification_type][1],
                                  label)
-            y_bar = y_3_line + (utils.get_label_length(label) + 5) * group_direction
+            
+            space_above_sequence = utils.get_height()-y_0_line if group == 'A' else y_0_line
+            space_per_neuropathalogy = (space_above_sequence - label_plot_height)  // (len(df["Neuropathology"].unique())-1)
             # -10 for margin above and below bars
-            max_bar_height = space_per_group - 10
+            max_bar_height = space_per_neuropathalogy - 10
             # plot bars
             for i, neuropathology in enumerate(parameters.NEUROPATHOLOGIES.keys()):
                modification_column = [col for col in df.columns if col not in ['ID', 'Neuropathology'] and df[col].iloc[1] == label]
@@ -75,7 +80,7 @@ def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, 
                bar_percentages[neuropathology].append(percentage)
                x0 = x_1_line - bar_width // 2
                x1 = x_1_line + bar_width // 2
-               y0 = y_bar + (i * space_per_group + 5) * group_direction
+               y0 = y_bar + (i * space_per_neuropathalogy + 5) * group_direction
                y1 = y0 + height * group_direction
 
                fig.add_shape(
@@ -88,46 +93,46 @@ def add_bar_plot(fig: go.Figure, group: str, modification_sights_all: dict[int, 
                   fillcolor=parameters.MODIFICATIONS[modification_type][1]
                )
 
-               # plot legends
-               if not legends[modification_group][neuropathology]:
-                  legends[modification_group][neuropathology] = True
-                  y_group = y0
-                  fig.add_annotation(x = 10,
-                                     y= y_group + space_per_group//2 * group_direction,
-                                     width=space_per_group,
-                                     text=parameters.NEUROPATHOLOGIES[neuropathology],
-                                     textangle=-90,
-                                     font=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="black"),
-                                     showarrow=False)
-                  for j in range(5):
-                     y_trace = y_group + max_bar_height//4 * j * group_direction
-                     fig.add_trace(go.Scatter(x=[x0, utils.get_width()],
-                                              y=[y_trace, y_trace],
-                                              mode='lines',
-                                              line=dict(color='lightgray', width=1),
-                                              showlegend=False,
-                                              hoverinfo='none')
-                                              )
-                     if j % 2 == 0:
-                        text = str(j*25) + '%'
-                        fig.add_annotation(x=x0-5-utils.get_label_length(text),
-                                           y=y_trace,
-                                           width=space_per_group,
-                                           text=text,
-                                           font=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="black"),
-                                           showarrow=False)
-                     
-
          else:
             pass
          modifications_visited += 1
 
-      if modifications_visited > group_size/2:
+      if modifications_visited > len(group_positions)/2:
          height_offset -= 2
       else:
          height_offset += 2
-         max_offset = max(max_offset, height_offset)
    
+   max_line_breaks = 0
+   for legend_text in parameters.NEUROPATHOLOGIES.values():
+      max_line_breaks = max(max_line_breaks, legend_text.count('<br>'))
+   if parameters.FIGURE_ORIENTATION == 0:
+      for i, neuropathology in enumerate(parameters.NEUROPATHOLOGIES.keys()):
+         y_group = y_bar + (i * space_per_neuropathalogy + 5) * group_direction
+         fig.add_annotation(x = utils.SEQUENCE_BOUNDARIES['x0'] - (max_line_breaks+1) * utils.get_label_height() * 0.75 - utils.get_label_length('100%'),
+                            y = y_group + space_per_neuropathalogy//2 * group_direction,
+                            width=space_per_neuropathalogy,
+                            text=parameters.NEUROPATHOLOGIES[neuropathology],
+                            textangle=-90,
+                            font=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="black"),
+                            showarrow=False)
+         for j in range(5):
+            y_trace = y_group + max_bar_height//4 * j * group_direction
+            fig.add_trace(go.Scatter(x=[utils.SEQUENCE_BOUNDARIES["x0"], utils.SEQUENCE_BOUNDARIES["x0"]+bar_plot_width],
+                                     y=[y_trace, y_trace],
+                                     mode='lines',
+                                     line=dict(color='lightgray', width=1),
+                                     showlegend=False,
+                                     hoverinfo='none'))
+            if j % 2 == 0:
+               text = str(j*25) + '%'
+               fig.add_annotation(x=utils.SEQUENCE_BOUNDARIES["x0"]-utils.get_label_length(text),
+                                    y=y_trace,
+                                    text=text,
+                                    font=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="black"),
+                                    showarrow=False)
+   else:
+      pass
+
    return fig
 
 def plot_line_with_label(fig, x_0, x_1, y_0, y_1, y_2, y_3, y_label, color, label):
@@ -194,15 +199,30 @@ def filter_relevant_modification_sights(helper_file: str):
 
 
 def create_label_plot(input_file: str | os.PathLike, output_path: str | os.PathLike):
-   fig = sequence_plot.create_plot(input_file)
-
    label_input_file = 'data/chris/label_plot/PP-MASCOT-CellAll-All_cutoff_0-05FDR_TAU_reformat_reduced_sub_binaryCell.csv'
    all_positions, relevant_positions, df = filter_relevant_modification_sights(label_input_file)
    
    group_a_all, group_b_all = utils.separate_by_group(all_positions)
    group_a_relevant, group_b_relevant = utils.separate_by_group(relevant_positions)
-   for (group_label, group_all, group_relevant) in [('A', group_a_all, group_a_relevant), ('B', group_b_all, group_b_relevant)]:
-      fig = add_bar_plot(fig, group_label, group_all, group_relevant, df)
+
+   if len(group_a_relevant) == 0:
+      fig = sequence_plot.create_plot(input_file, 'A')
+   elif len(group_b_relevant) == 0:
+      fig = sequence_plot.create_plot(input_file, 'B')
+   else:
+      fig = sequence_plot.create_plot(input_file)
+
+   positions_A, positions_B = get_bar_positions(group_a_all, group_b_all)
+   group_size_A = len(positions_A)
+   group_size_B = len(positions_B)
+   bar_plot_width = get_bar_plot_width(group_size_A, group_size_B)
+   highest_position = positions_A[-1] if len(positions_A) > len(positions_B) else positions_B[-1]
+   label_plot_height = (max(group_size_A, group_size_B) + utils.get_label_length(f'X{highest_position}') + 30)
+
+   for (group_label, group_all, group_relevant, group_positions) in [('A', group_a_all, group_a_relevant, positions_A), ('B', group_b_all, group_b_relevant, positions_B)]:
+      if len(group_positions) == 0:
+         continue
+      fig = add_bar_plot(fig, group_label, group_all, group_relevant, df, group_positions, bar_plot_width, label_plot_height)
    
 
    utils.show_plot(fig, output_path)
