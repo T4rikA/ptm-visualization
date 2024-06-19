@@ -303,8 +303,8 @@ def filter_relevant_modification_sights(helper_file: str):
    return all_modification_sights, relevant_modification_sights, df
 
 
-def create_label_plot(input_file: str | os.PathLike, output_path: str | os.PathLike):
-   label_input_file = 'data/chris/label_plot/PP-MASCOT-CellAll-All_cutoff_0-05FDR_TAU_reformat_reduced_sub_binaryCell.csv'
+def create_bar_plot(input_file: str | os.PathLike, output_path: str | os.PathLike):
+   label_input_file = 'data/chris/bar_plot/PP-MASCOT-CellAll-All_cutoff_0-05FDR_TAU_reformat_reduced_sub_binaryCell.csv'
    all_positions, relevant_positions, df = filter_relevant_modification_sights(label_input_file)
    
    group_a_all, group_b_all = utils.separate_by_group(all_positions)
@@ -332,4 +332,4 @@ def create_label_plot(input_file: str | os.PathLike, output_path: str | os.PathL
 
    utils.show_plot(fig, output_path)
 
-create_label_plot(parameters.FASTA_INPUT_FILE, parameters.OUTPUT_FOLDER)
+create_bar_plot(parameters.FASTA_INPUT_FILE, parameters.OUTPUT_FOLDER)
