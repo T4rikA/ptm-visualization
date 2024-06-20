@@ -22,23 +22,25 @@ REGIONS = [
 
 # Modification Settings
 MODIFICATIONS = {
-    'Phospho': ('Phosphorylation', '#000000', 'A'),
-    'Acetyl': ('Acetylation', '#FF08FF', 'A'),
-    'GG': ('Ubiquitination', '#0C0CFF', 'A'),
+    'Phospho': ('Phosphorylation', '#000000'),
+    'Acetyl': ('Acetylation', '#93478F'),
+    'Methyl': ('Methylation', '#C35728'),
+    'GG': ('Ubiquitination', '#7AB77C'),
+    'Citrullination': ('Citrullination', '#FF17E3'),
 }
 
 EXCLUDED_MODIFICATIONS = {'Q': None,
                           'X': None,
                           'S': ['GG']}
 
-# Neuropathology Settings
-NEUROPATHOLOGIES = {'HMWC': 'HMW <br>Wessling et al. <br>identified',
-                    'HMW': 'HMW <br>Patient <br>frequency',
-                }
+INPUT_FILES = {
+    'A': ('Cleavage', 'data/chris/cleavage_plot/PPc_COMPLETE_cutoff_0-05FDR_reformat_XX_C_collmean_tarik.csv'),
+    'B': ('PTM', 'data/chris/cleavage_plot/PPc_COMPLETE_cutoff_0-05FDR_reformat_XX_tarik.csv'),
+}
 
-# Bar Plot Settings
-MIN_BAR_WIDTH = 12
-INVERT_AXIS_GROUP_B = False
+CLEAVAGE_LABEL_COLOR = '#333333'
+
+NEUROPATHOLOGIES = {}
 
 # Input Output Settings
 FASTA_INPUT_FILE = 'data/uniprot_data/tau_isoforms2N4R.fasta'
