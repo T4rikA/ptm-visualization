@@ -33,6 +33,8 @@ EXCLUDED_MODIFICATIONS = {'Q': None,
                           'X': None,
                           'S': ['GG']}
 
+THRESHOLD = 10
+
 INPUT_FILES = {
     'A': ('Cleavage', 'data/chris/cleavage_plot/PPc_COMPLETE_cutoff_0-05FDR_reformat_XX_C_collmean_tarik.csv'),
     'B': ('PTM', 'data/chris/cleavage_plot/PPc_COMPLETE_cutoff_0-05FDR_reformat_XX_tarik.csv'),
@@ -52,7 +54,7 @@ FONT = 'Arial'
 
 # Margins for sequence Plot
 # TODO remove margins and auto calculate based on legend
-LEFT_MARGIN = 0.055
+LEFT_MARGIN = 0.065
 RIGHT_MARGIN = 0.025
 TOP_MARGIN = 0.055
 BOTTOM_MARGIN = 0.025
