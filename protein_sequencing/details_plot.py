@@ -73,34 +73,64 @@ def plot_range_with_label_horizontal(fig: go.Figure, x_0_start: int, x_0_end: in
                             ))
     return fig
 
+def plot_neuropathologies_horizontal(fig, df, x_0_neuropathologies, y_0_neuropathologies, dx, dy):
+    fig.add_trace(go.Heatmap(z=df,
+                             x0=x_0_neuropathologies,
+                             y0=y_0_neuropathologies+dy//2,
+                             dx=dx, dy=dy,
+                             showscale=False, hoverinfo='none',
+                             xgap=1, ygap=1,
+                             colorscale=[[0, '#FFFFFF'], [1, '#452A79']]))
+
 def plot_cleavage_labels(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_cleavage: int, label_plot_height: int, group: str):
+    # prepare data:
     cleavages = cleavage_df.iloc[0:1,2:].values[0].tolist()
+    cleavage_df.columns = cleavage_df.iloc[0]
+    cleavage_df = cleavage_df.iloc[1:]
+
+    reverse_neuropathology_mapping = {}
+    for key, values in parameters.NEUROPATHOLOGIES.items():
+        for value in values:
+            reverse_neuropathology_mapping[value] = key
+
+    cleavage_df.iloc[:,1] = cleavage_df.iloc[:,1].map(reverse_neuropathology_mapping)
+    mean_values = cleavage_df.iloc[:,2:].astype(float).groupby(cleavage_df.iloc[:,1]).mean()
+
     longest_label = ''
     for cleavage in cleavages:
         if utils.get_label_length(str(cleavage)) > utils.get_label_length(longest_label):
             longest_label = str(cleavage)
 
     group_direction = 1 if group == 'A' else -1
+    first_cleavage_in_region = 0
     cleavages_visited = 0
     last_end = parameters.REGIONS[0][1]
     last_region = 0
-    region_boundary = False
 
     y_0_line = utils.SEQUENCE_BOUNDARIES['y1'] if group == 'A' else utils.SEQUENCE_BOUNDARIES['y0']
     y_1_line = y_0_line + 10 * group_direction
 
+    y_0_neuropathologies = y_0_line + (label_plot_height + 10) * group_direction
+    vertical_space_left = utils.get_height() - y_0_neuropathologies if group == 'A' else y_0_neuropathologies
+    dx = pixels_per_cleavage
+    dy = vertical_space_left//len(parameters.NEUROPATHOLOGIES.keys())*group_direction
     for cleavage in cleavages:
         if '-' in str(cleavage):
             start, end = map(int, cleavage.split('-'))
         else:
             start = end = int(cleavage)
-        while start > last_end:
-            last_region += 1
-            last_end = parameters.REGIONS[last_region][1]
-            region_boundary = True
-        if region_boundary:
+        if start > last_end:
+            
+            if parameters.FIGURE_ORIENTATION == 0:
+                x_0_neuropathologies = first_cleavage_in_region * pixels_per_cleavage + utils.SEQUENCE_OFFSET
+                plot_neuropathologies_horizontal(fig, mean_values.iloc[:,first_cleavage_in_region-last_region:cleavages_visited-last_region], x_0_neuropathologies, y_0_neuropathologies, dx, dy)
+            else:
+                pass
+            while start > last_end:
+                last_region += 1
+                last_end = parameters.REGIONS[last_region][1]
             cleavages_visited += 1
-            region_boundary = False
+            first_cleavage_in_region = cleavages_visited
         if parameters.FIGURE_ORIENTATION == 0:
             if start == end:
                 label = str(start)
@@ -131,8 +161,13 @@ def plot_cleavage_labels(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_c
                                     label)
         else:
             pass
-
         cleavages_visited += 1
+    # plot neuropathologies for last region
+    if parameters.FIGURE_ORIENTATION == 0:
+        x_0_neuropathologies = first_cleavage_in_region * pixels_per_cleavage + utils.SEQUENCE_OFFSET
+        plot_neuropathologies_horizontal(fig, mean_values.iloc[:,first_cleavage_in_region-last_region:], x_0_neuropathologies, y_0_neuropathologies, dx, dy)
+    else:
+        pass
 
 def plot_line_with_label(fig: go.Figure, x_0: int, x_1: int, y_0: int, y_1: int, y_2: int, y_3: int, y_label: int, label: str, color):
     fig.add_trace(go.Scatter(x=[x_0, x_0, x_1, x_1],
@@ -216,6 +251,8 @@ def create_details_plot(input_file: str | os.PathLike, output_path: str | os.Pat
         fig = sequence_plot.create_plot(input_file, 'B')
     else:
         fig = sequence_plot.create_plot(input_file)
+    cleavage_file_path = None
+    ptm_file_path = None
     for group in parameters.INPUT_FILES.keys():
         match parameters.INPUT_FILES[group][0]:
             case 'Cleavage':
@@ -238,10 +275,11 @@ def create_details_plot(input_file: str | os.PathLike, output_path: str | os.Pat
         cleavages = cleavage_df.iloc[0:1,2:].values[0].tolist()
         pixels_per_cleavage = plot_width // (len(cleavages) + present_regions.count(True))
         assert(pixels_per_cleavage > parameters.FONT_SIZE)
+
         plot_cleavage_labels(fig, cleavage_df, pixels_per_cleavage, label_plot_height, cleavage_group)
 
     if ptm_file_path:
-        ptm_df = filter_relevant_modification_sights(ptm_file_path, parameters.THRESHOLD)
+        ptm_df = filter_relevant_modification_sights(ptm_file_path, parameters.MODIFICATION_THRESHOLD)
         present_regions = get_present_regions_ptm(ptm_df)
         number_of_ptms = len(ptm_df.columns)
         number_of_regions = present_regions.count(True)
@@ -254,7 +292,7 @@ def create_details_plot(input_file: str | os.PathLike, output_path: str | os.Pat
         else:
             raise ValueError('Too many PTMs to fit in plot')
         
-        plot_ptm_labels(fig, ptm_df, pixels_per_ptm, label_plot_height, ptm_group, second_row)
+        #plot_ptm_labels(fig, ptm_df, pixels_per_ptm, label_plot_height, ptm_group, second_row)
     
     utils.show_plot(fig, output_path)
 

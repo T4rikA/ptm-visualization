@@ -42,7 +42,15 @@ INPUT_FILES = {
 
 CLEAVAGE_LABEL_COLOR = '#333333'
 
-NEUROPATHOLOGIES = {}
+NEUROPATHOLOGIES = {"CTR": ["CTR"],
+                    "DLB": ["DLB"],
+                    "PSP": ["PSP"],
+                    "PiD": ["PiD"],
+                    "FTLD": ["FTLDTau"],
+                    "CBD": ["CBD"],
+                    "CTE": ["CTE"],
+                    "AD": ["AD", "NPCAD"],
+                    "fAD": ["fAD"],}
 
 # Input Output Settings
 FASTA_INPUT_FILE = 'data/uniprot_data/tau_isoforms2N4R.fasta'
