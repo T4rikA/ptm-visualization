@@ -53,7 +53,7 @@ def create_plot(input_file: str | os.PathLike, groups_missing = None) -> go.Figu
     region_boundaries = []
     region_end_pixel = utils.SEQUENCE_OFFSET
     region_start = 1
-    for region_name, region_end, region_color in parameters.REGIONS:
+    for region_name, region_end, region_color, _ in parameters.REGIONS:
         region_start_pixel = region_end_pixel
         region_end_pixel = region_end * utils.PIXELS_PER_PROTEIN + 1 + utils.SEQUENCE_OFFSET
         region_boundaries.append((region_name, region_start_pixel, region_end_pixel, parameters.SEQUENCE_REGION_COLORS[region_color], region_start, region_end))

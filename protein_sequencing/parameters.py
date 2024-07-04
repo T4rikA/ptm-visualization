@@ -8,16 +8,16 @@ FONT_SIZE = 11
 # Sequence Settings
 # First sequence is from (1, 44), second from (45, 73) and so on
 REGIONS = [
-    ('', 44, 'A'),
-    ('N1', 73, 'B'),
-    ('N2', 102, 'B'),
-    ('2N4R-Tau', 150, 'A'),
-    ('Proline-rich region', 241, 'B'),
-    ('R1', 272, 'B'),
-    ('R2', 303, 'B'),
-    ('R3', 334, 'B'),
-    ('R4', 371, 'B'),
-    ('', 441, 'A'),
+    ('N-term', 44, 'A', 'N-term'),
+    ('N1', 73, 'B', 'N1'),
+    ('N2', 102, 'B', 'N2'),
+    ('2N4R-Tau', 150, 'A', 'Mid'),
+    ('Proline-rich region', 241, 'B', 'PRR'),
+    ('R1', 272, 'B', 'R1'),
+    ('R2', 303, 'B', 'R2'),
+    ('R3', 334, 'B', 'R3'),
+    ('R4', 371, 'B', 'R4'),
+    ('C-term', 441, 'A', 'C-term'),
 ]
 
 # Modification Settings
@@ -33,7 +33,7 @@ EXCLUDED_MODIFICATIONS = {'Q': None,
                           'X': None,
                           'S': ['GG']}
 
-THRESHOLD = 10
+MODIFICATION_THRESHOLD = 10
 
 INPUT_FILES = {
     'A': ('Cleavage', 'data/chris/cleavage_plot/PPc_COMPLETE_cutoff_0-05FDR_reformat_XX_C_collmean_tarik.csv'),
@@ -42,15 +42,15 @@ INPUT_FILES = {
 
 CLEAVAGE_LABEL_COLOR = '#333333'
 
-NEUROPATHOLOGIES = {"CTR": ["CTR"],
-                    "DLB": ["DLB"],
-                    "PSP": ["PSP"],
-                    "PiD": ["PiD"],
-                    "FTLD": ["FTLDTau"],
-                    "CBD": ["CBD"],
-                    "CTE": ["CTE"],
-                    "AD": ["AD", "NPCAD"],
-                    "fAD": ["fAD"],}
+NEUROPATHOLOGIES = {"CTR": (["CTR"], '#4DAF4A'),
+                    "DLB": (["DLB"], '#8DD3C7'),
+                    "PSP": (["PSP"], '#FF7F00'),
+                    "PiD": (["PiD"], '#984EA3'),
+                    "FTLD": (["FTLDTau"], '#17DFFF'),
+                    "CBD": (["CBD"], '#FFD92F'),
+                    "CTE": (["CTE"], '#1740B6'),
+                    "AD": (["AD", "NPCAD"], '#E41A1C'),
+                    "fAD": (["fAD"], '#9C0B0C'),}
 
 # Input Output Settings
 FASTA_INPUT_FILE = 'data/uniprot_data/tau_isoforms2N4R.fasta'
