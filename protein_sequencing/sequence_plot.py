@@ -2,7 +2,7 @@ import plotly.graph_objects as go
 import os
 from protein_sequencing import utils, uniprot_align, parameters
 
-def create_plot(input_file: str | os.PathLike, groups_missing = None) -> go.Figure:
+def create_plot(input_file: str | os.PathLike, groups_missing = None, legend_positioning = None) -> go.Figure:
 
     alignments = list(uniprot_align.get_alignment(input_file))
     max_sequence_length = 0
@@ -59,11 +59,11 @@ def create_plot(input_file: str | os.PathLike, groups_missing = None) -> go.Figu
         region_boundaries.append((region_name, region_start_pixel, region_end_pixel, parameters.SEQUENCE_REGION_COLORS[region_color], region_start, region_end))
         region_start = region_end + 1
 
-    fig = create_sequence_plot(region_boundaries, groups_missing)
+    fig = create_sequence_plot(region_boundaries, groups_missing, legend_positioning)
     
     return fig
 
-def create_sequence_plot(region_boundaries: list[tuple[str, int, int, str, int, int]], groups_missing: str | None) -> go.Figure:
+def create_sequence_plot(region_boundaries: list[tuple[str, int, int, str, int, int]], groups_missing: str | None, legend_positioning: str | None) -> go.Figure:
     fig = go.Figure()
     
     width = utils.get_width()
@@ -83,31 +83,37 @@ def create_sequence_plot(region_boundaries: list[tuple[str, int, int, str, int, 
     fig.update_yaxes(visible=False)
 
     # Legend
-    x_legend = 0 if parameters.FIGURE_ORIENTATION == 0 else width/2 + parameters.SEQUENCE_PLOT_HEIGHT
-    y_legend = height/2 + parameters.SEQUENCE_PLOT_HEIGHT + (len(parameters.MODIFICATIONS.keys())+1) * utils.get_label_height() if parameters.FIGURE_ORIENTATION == 0 else height
-    if groups_missing:
-        if groups_missing == 'A':
-            if parameters.FIGURE_ORIENTATION == 1:
-                longest_text = 'Legend:'
-                for mod in parameters.MODIFICATIONS:
-                    if len(parameters.MODIFICATIONS[mod][0]) > len(longest_text):
-                        longest_text = parameters.MODIFICATIONS[mod][0]
-                x_legend =  width - parameters.SEQUENCE_PLOT_HEIGHT - utils.get_label_length(longest_text)
+    if legend_positioning:
+        longest_text = parameters.MODIFICATION_LEGEND_TITLE
+        for mod in parameters.MODIFICATIONS:
+            if len(parameters.MODIFICATIONS[mod][0]) > len(longest_text):
+                longest_text = parameters.MODIFICATIONS[mod][0]
+        if not groups_missing:
+            if legend_positioning == 'A':
+                x_legend = 0 if parameters.FIGURE_ORIENTATION == 0 else width//2 + parameters.SEQUENCE_PLOT_HEIGHT//2
+                y_legend = height//2 + parameters.SEQUENCE_PLOT_HEIGHT//2 + (len(parameters.MODIFICATIONS.keys())+1) * utils.get_label_height() if parameters.FIGURE_ORIENTATION == 0 else height
             else:
-                y_legend = height - parameters.SEQUENCE_PLOT_HEIGHT
-        if groups_missing == 'B':
-            if parameters.FIGURE_ORIENTATION == 1:
-                x_legend = parameters.SEQUENCE_PLOT_HEIGHT
-            else:
-                y_legend = parameters.SEQUENCE_PLOT_HEIGHT + (len(parameters.MODIFICATIONS.keys())+1) * utils.get_label_height()
+                x_legend = 0 if parameters.FIGURE_ORIENTATION == 0 else width//2 - parameters.SEQUENCE_PLOT_HEIGHT//2 - utils.get_label_length(longest_text)
+                y_legend = height//2 - parameters.SEQUENCE_PLOT_HEIGHT//2 if parameters.FIGURE_ORIENTATION == 0 else height
+        else:
+            if groups_missing == 'A':
+                if parameters.FIGURE_ORIENTATION == 1:
+                    x_legend =  width - parameters.SEQUENCE_PLOT_HEIGHT - utils.get_label_length(longest_text)
+                else:
+                    y_legend = height - parameters.SEQUENCE_PLOT_HEIGHT
+            if groups_missing == 'B':
+                if parameters.FIGURE_ORIENTATION == 1:
+                    x_legend = parameters.SEQUENCE_PLOT_HEIGHT
+                else:
+                    y_legend = parameters.SEQUENCE_PLOT_HEIGHT + (len(parameters.MODIFICATIONS.keys())+1) * utils.get_label_height()
 
-    fig.add_trace(go.Scatter(x=[x_legend], y=[y_legend], mode='text', text="<b>Legend:</b>", textposition="bottom right", showlegend=False, hoverinfo='none', textfont=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="black")))
-    y_legend -= utils.get_label_height()
-    for i, modification in enumerate(parameters.MODIFICATIONS.values()):
-        # y_legend = height/2 + parameters.SEQUENCE_PLOT_HEIGHT + i*utils.get_label_height()
-        # if parameters.FIGURE_ORIENTATION == 1:
-        #     y_legend = height - ((i+1)*utils.get_label_height())
-        fig.add_trace(go.Scatter(x=[x_legend], y=[y_legend-i*utils.get_label_height()], mode='text', text=modification[0], textposition="bottom right", showlegend=False, hoverinfo='none', textfont=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color=modification[1])))
+        fig.add_trace(go.Scatter(x=[x_legend], y=[y_legend], mode='text', text=f"<b>{parameters.MODIFICATION_LEGEND_TITLE}</b>", textposition="bottom right", showlegend=False, hoverinfo='none', textfont=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="black")))
+        y_legend -= utils.get_label_height()
+        for i, modification in enumerate(parameters.MODIFICATIONS.values()):
+            # y_legend = height/2 + parameters.SEQUENCE_PLOT_HEIGHT + i*utils.get_label_height()
+            # if parameters.FIGURE_ORIENTATION == 1:
+            #     y_legend = height - ((i+1)*utils.get_label_height())
+            fig.add_trace(go.Scatter(x=[x_legend], y=[y_legend-i*utils.get_label_height()], mode='text', text=modification[0], textposition="bottom right", showlegend=False, hoverinfo='none', textfont=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color=modification[1])))
 
     # Sequence
     fig = plot_sequence(fig, region_boundaries, groups_missing)

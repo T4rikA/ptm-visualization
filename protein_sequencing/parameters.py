@@ -21,6 +21,8 @@ REGIONS = [
 ]
 
 # Modification Settings
+# TODO implement
+MODIFICATION_LEGEND_TITLE = 'PTMs'
 MODIFICATIONS = {
     'Phospho': ('Phosphorylation', '#000000'),
     'Acetyl': ('Acetylation', '#93478F'),
@@ -29,6 +31,8 @@ MODIFICATIONS = {
     'Citrullination': ('Citrullination', '#FF17E3'),
 }
 
+LIST_TO_HIGHLIGHT = ['Phospho(S)@68']
+
 EXCLUDED_MODIFICATIONS = {'Q': None,
                           'X': None,
                           'S': ['GG']}
@@ -36,8 +40,8 @@ EXCLUDED_MODIFICATIONS = {'Q': None,
 MODIFICATION_THRESHOLD = 10
 
 INPUT_FILES = {
-    'A': ('Cleavage', 'data/chris/cleavage_plot/PPc_COMPLETE_cutoff_0-05FDR_reformat_XX_C_collmean_tarik.csv'),
-    'B': ('PTM', 'data/chris/cleavage_plot/PPc_COMPLETE_cutoff_0-05FDR_reformat_XX_tarik.csv'),
+    'B': ('Cleavage', 'data/chris/cleavage_plot/PPc_COMPLETE_cutoff_0-05FDR_reformat_XX_C_collmean_tarik.csv'),
+    'A': ('PTM', 'data/chris/cleavage_plot/PPc_COMPLETE_cutoff_0-05FDR_reformat_XX_tarik.csv'),
 }
 
 CLEAVAGE_LABEL_COLOR = '#333333'

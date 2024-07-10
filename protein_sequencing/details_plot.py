@@ -4,7 +4,7 @@ import os
 import plotly.graph_objects as go
 import pandas as pd
 
-from protein_sequencing import parameters, utils,sequence_plot
+from protein_sequencing import parameters, utils, sequence_plot, constants
 
 def get_present_regions(positions):
     ranges = []
@@ -104,20 +104,53 @@ def plot_neuropathologies_horizontal(fig, df, x_0_neuropathologies, y_0_neuropat
                 ))
     return fig
 
-def plot_cleavage_labels(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_cleavage: int, label_plot_height: int, group: str):
-    # prepare data:
-    cleavages = cleavage_df.iloc[0:1,2:].values[0].tolist()
-    cleavage_df.columns = cleavage_df.iloc[0]
-    cleavage_df = cleavage_df.iloc[1:]
+def plot_neuropathology_labels_horizontal(fig: go.Figure, mean_values: pd.DataFrame, y_0_neuropathologies: int, dy: int, dx: int):
+    for i, neuropathology in enumerate(mean_values.index):
+        y_0_rect = y_0_neuropathologies + i*dy
+        fig.add_shape(type='rect',
+                      x0 = utils.SEQUENCE_OFFSET - dx//2 - 100,
+                      x1 = utils.SEQUENCE_OFFSET - dx//2,
+                      y0 = y_0_rect,
+                      y1 = y_0_rect + dy,
+                      fillcolor=parameters.NEUROPATHOLOGIES[neuropathology][1],
+                      line=dict(width=0),
+                      showlegend=False,
+                      layer='below',)
+        # based on https://stackoverflow.com/questions/3942878/
+        red, green, blue = tuple(int(parameters.NEUROPATHOLOGIES[neuropathology][1][i:i+2], 16) for i in (1, 3, 5))
+        color = '#000000' if red*0.299 + green*0.587 + blue*0.114 > 130 else '#ffffff'
+
+        fig.add_annotation(x=utils.SEQUENCE_OFFSET - dx//2 - 50, y=y_0_rect + dy//2,
+            text=neuropathology,
+            showarrow=False,
+            align='center',
+            font=dict(
+                family=parameters.FONT,
+                size=parameters.SEQUENCE_PLOT_FONT_SIZE,
+                color=color))
+        
+def preprocess_neuropathologies(df: pd.DataFrame, ptm: bool):
+    df.columns = df.iloc[0]
+    if ptm:
+        df = df.iloc[2:]
+    else:
+        df = df.iloc[1:]
 
     reverse_neuropathology_mapping = {}
     for key, list in parameters.NEUROPATHOLOGIES.items():
         values = list[0]
         for value in values:
             reverse_neuropathology_mapping[value] = key
+    df.iloc[:,1] = df.iloc[:,1].map(reverse_neuropathology_mapping)
+    mean_values = df.iloc[:,2:].astype(float).groupby(df.iloc[:,1]).mean()
 
-    cleavage_df.iloc[:,1] = cleavage_df.iloc[:,1].map(reverse_neuropathology_mapping)
-    mean_values = cleavage_df.iloc[:,2:].astype(float).groupby(cleavage_df.iloc[:,1]).mean()
+    return mean_values
+
+
+def plot_cleavage_labels(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_cleavage: int, label_plot_height: int, group: str):
+    # prepare data:
+    cleavages = cleavage_df.iloc[0:1,2:].values[0].tolist()
+    mean_values = preprocess_neuropathologies(cleavage_df, False)
 
     longest_label = ''
     for cleavage in cleavages:
@@ -143,29 +176,7 @@ def plot_cleavage_labels(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_c
     dx = pixels_per_cleavage
     dy = vertical_space_left//len(mean_values.index)*group_direction
 
-    for i, neuropathology in enumerate(mean_values.index):
-        y_0_rect = y_0_neuropathologies + i*dy
-        fig.add_shape(type='rect',
-                      x0 = utils.SEQUENCE_OFFSET - dx//2 - 100,
-                      x1 = utils.SEQUENCE_OFFSET - dx//2,
-                      y0 = y_0_rect,
-                      y1 = y_0_rect + dy,
-                      fillcolor=parameters.NEUROPATHOLOGIES[neuropathology][1],
-                      line=dict(width=0),
-                      showlegend=False,
-                      layer='below',)
-        # based on https://stackoverflow.com/questions/3942878/
-        red, green, blue = tuple(int(parameters.NEUROPATHOLOGIES[neuropathology][1][i:i+2], 16) for i in (1, 3, 5))
-
-        fig.add_annotation(x=utils.SEQUENCE_OFFSET - dx//2 - 50, y=y_0_rect + dy//2,
-            text=neuropathology,
-            showarrow=False,
-            align='center',
-            font=dict(
-                family=parameters.FONT,
-                size=parameters.SEQUENCE_PLOT_FONT_SIZE,
-                color= '#000000' if red*0.299 + green*0.587 + blue*0.114 > 130 else '#ffffff'))
-
+    plot_neuropathology_labels_horizontal(fig, mean_values, y_0_neuropathologies, dy, dx)
 
     for cleavage in cleavages:
         if '-' in str(cleavage):
@@ -255,12 +266,14 @@ def plot_ptm_labels(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, l
     if second_row:
         second_row_offset = pixels_per_ptm // 2
 
+    mean_values = preprocess_neuropathologies(ptm_df, True)
+
     if parameters.FIGURE_ORIENTATION == 0:
         y_0_line = utils.SEQUENCE_BOUNDARIES['y1'] if group == 'A' else utils.SEQUENCE_BOUNDARIES['y0']
         y_1_line = y_0_line + 10 * group_direction
-        y_2_line = y_0_line + (label_plot_height - label_length - 10) * group_direction
+        y_2_line = y_0_line + (label_plot_height - label_length - 10 - constants.DETAILS_PLOT_PTM_RECT_LENGTH - 10) * group_direction
         if second_row:
-            y_2_line = y_0_line + (label_plot_height - 2*(label_length + 10)) * group_direction
+            y_2_line = y_0_line + (label_plot_height - 2*(label_length + 10) - constants.DETAILS_PLOT_PTM_RECT_LENGTH) * group_direction
     else:
         pass
 
@@ -268,6 +281,18 @@ def plot_ptm_labels(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, l
     last_end = parameters.REGIONS[0][1]
     last_region = 0
     region_boundary = False
+    dx = pixels_per_ptm
+    if second_row:
+        dx = second_row_offset
+
+    y_0_neuropathologies = y_0_line + (label_plot_height + 10) * group_direction
+    vertical_space_left = utils.get_height() - y_0_neuropathologies if group == 'A' else y_0_neuropathologies
+    # offset for label
+    vertical_space_left -= utils.get_label_height() + 5
+    dy = vertical_space_left//len(mean_values.index)*group_direction
+
+    plot_neuropathology_labels_horizontal(fig, mean_values, y_0_neuropathologies, dy, dx)
+
     for i, ptm in enumerate(ptms):
         ptm_position = int(ptm[1:])
         while ptm_position > last_end:
@@ -287,7 +312,17 @@ def plot_ptm_labels(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, l
             else:
                 ptms_visited += 1
             y_label = y_3_line + (utils.get_label_length(ptm)+10) // 2 * group_direction
-            plot_line_with_label(fig, x_0_line, x_1_line, y_0_line, y_1_line, y_2_line, y_3_line, y_label, ptm, parameters.MODIFICATIONS[str(ptm_df.iloc[0,i+2])][1])
+            text_color = parameters.MODIFICATIONS[str(ptm_df.iloc[0,i+2])][1]
+            plot_line_with_label(fig, x_0_line, x_1_line, y_0_line, y_1_line, y_2_line, y_3_line, y_label, ptm, text_color)
+            x_0_rect = x_1_line - dx//2
+            fig.add_shape(type='rect',
+                      x0 = x_0_rect,
+                      x1 = x_0_rect + dx,
+                      y0 = y_0_line + (label_plot_height-constants.DETAILS_PLOT_PTM_RECT_LENGTH)*group_direction,
+                      y1 = y_0_line + (label_plot_height)*group_direction,
+                      fillcolor=text_color,
+                      line=dict(width=1, color='grey'),
+                      showlegend=False,)
         else:
             pass
 
@@ -299,6 +334,8 @@ def filter_relevant_modification_sights(ptm_file: str, threshold: int):
     df_values = df_filtered.iloc[2:].astype(int)
     sums = df_values.sum()
     filtered_columns = sums[sums >= threshold].index
+    # all filter options result in an empty dataframe, check relevant modifications and threshold to keep more columns
+    assert len(filtered_columns) > 0
     filtered_df = df[filtered_columns]
 
     result_df = pd.concat([df.iloc[:, :2], filtered_df], axis=1)
@@ -308,12 +345,21 @@ def filter_relevant_modification_sights(ptm_file: str, threshold: int):
 
 
 def create_details_plot(input_file: str | os.PathLike, output_path: str | os.PathLike):
+    legend = None
     if not 'A' in parameters.INPUT_FILES.keys():
-        fig = sequence_plot.create_plot(input_file, 'A')
+        if parameters.INPUT_FILES['B'][0] == 'PTM':
+            legend = 'B'
+        fig = sequence_plot.create_plot(input_file, 'A', legend)
     elif not 'B' in parameters.INPUT_FILES.keys():
-        fig = sequence_plot.create_plot(input_file, 'B')
+        if parameters.INPUT_FILES['A'][0] == 'PTM':
+            legend = 'A'
+        fig = sequence_plot.create_plot(input_file, 'B', legend)
     else:
-        fig = sequence_plot.create_plot(input_file)
+        if parameters.INPUT_FILES['A'][0] == 'PTM':
+            legend = 'A'
+        if parameters.INPUT_FILES['B'][0] == 'PTM':
+            legend = 'B'
+        fig = sequence_plot.create_plot(input_file, None, legend)
     cleavage_file_path = None
     ptm_file_path = None
     for group in parameters.INPUT_FILES.keys():
@@ -327,8 +373,14 @@ def create_details_plot(input_file: str | os.PathLike, output_path: str | os.Pat
     if parameters.FIGURE_ORIENTATION == 0:
         # TODO calculate plot width based on legend to remove magic number 25
         plot_width = parameters.FIGURE_WIDTH-utils.SEQUENCE_BOUNDARIES['x0']-25
+        # fig.add_trace(
+        #     go.Scatter(
+        #         x=[utils.SEQUENCE_BOUNDARIES['x0']+plot_width, utils.SEQUENCE_BOUNDARIES['x0']+plot_width],
+        #         y=[0, parameters.FIGURE_HEIGHT],
+        #         mode='lines',
+        #         line=dict(color='red'),))
     else:
-        pass
+        plot_width = 5000
 
     label_plot_height = 150
     
@@ -345,11 +397,11 @@ def create_details_plot(input_file: str | os.PathLike, output_path: str | os.Pat
         ptm_df = filter_relevant_modification_sights(ptm_file_path, parameters.MODIFICATION_THRESHOLD)
         present_regions = get_present_regions_ptm(ptm_df)
         number_of_ptms = len(ptm_df.columns)
-        number_of_regions = present_regions.count(True)
+        number_of_regions = present_regions.count(True)-1
         second_row = False
-        if (number_of_ptms + number_of_regions) * parameters.FONT_SIZE <= plot_width:
+        if (number_of_ptms + number_of_regions) * utils.get_label_height() <= plot_width:
             pixels_per_ptm = plot_width // (number_of_ptms + number_of_regions)
-        elif (number_of_ptms + 2*number_of_regions) * parameters.FONT_SIZE <= 2 * plot_width:
+        elif (number_of_ptms + 2*number_of_regions) * utils.get_label_height() <= 2 * plot_width:
             pixels_per_ptm = plot_width // (math.ceil(number_of_ptms/2) + number_of_regions)
             second_row = True
         else:
