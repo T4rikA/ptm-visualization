@@ -37,7 +37,7 @@ LIST_TO_HIGHLIGHT = ['Phospho(S)@68']
 
 EXCLUDED_MODIFICATIONS = {'Q': None,
                           'X': None,
-                          'S': ['GG']}
+                          'S': ['GG'],}
 
 MODIFICATION_THRESHOLD = 10
 

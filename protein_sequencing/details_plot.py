@@ -153,6 +153,7 @@ def preprocess_neuropathologies(df: pd.DataFrame, ptm: bool):
             reverse_neuropathology_mapping[value] = key
     df.iloc[:,1] = df.iloc[:,1].map(reverse_neuropathology_mapping)
     mean_values = df.iloc[:,2:].astype(float).groupby(df.iloc[:,1]).mean()
+    mean_values = mean_values.reindex([*parameters.NEUROPATHOLOGIES])
 
     return mean_values, labels
 
@@ -279,7 +280,7 @@ def plot_ptm_labels(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, l
     # For debugging purposes
     #new_row = pd.DataFrame([ptms], columns=mean_values.columns, index=['ptm_position'])
     #mean_values = pd.concat([new_row, mean_values])
-    mean_values.to_csv('plotting_data_ptms.csv', sep=',')
+    #mean_values.to_csv('plotting_data_ptms.csv', sep=',')
     label_length = utils.get_label_length(ptms[-1])
     if group == 'B':
         mean_values = mean_values.iloc[::-1]
@@ -384,7 +385,9 @@ def plot_ptm_labels(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, l
 
 def filter_relevant_modification_sights(ptm_file: str, threshold: int):
     df = pd.read_csv(ptm_file)
-    columns_to_keep = [col for col in df.columns if df[col].iloc[0] in parameters.MODIFICATIONS.keys()]
+    columns_to_keep = [col for col in df.columns if df[col].iloc[0] in parameters.MODIFICATIONS.keys() and
+                       (df[col].iloc[1][:1] not in parameters.EXCLUDED_MODIFICATIONS.keys() or
+                       df[col].iloc[0] not in parameters.EXCLUDED_MODIFICATIONS[df[col].iloc[1][:1]])]
     df_filtered = df[columns_to_keep]
     df_values = df_filtered.iloc[2:].astype(int)
     sums = df_values.sum()
