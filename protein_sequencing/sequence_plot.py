@@ -63,6 +63,12 @@ def create_plot(input_file: str | os.PathLike, groups_missing = None, legend_pos
     
     return fig
 
+def sort_key(mod):
+    chars_to_count = ['i', 'l', 't', 'j']
+    primary_key = len(mod[0])
+    secondary_key = -sum(mod[0].count(char) for char in chars_to_count)
+    return (primary_key, secondary_key)
+
 def create_sequence_plot(region_boundaries: list[tuple[str, int, int, str, int, int]], groups_missing: str | None, legend_positioning: str | None) -> go.Figure:
     fig = go.Figure()
     
@@ -109,11 +115,11 @@ def create_sequence_plot(region_boundaries: list[tuple[str, int, int, str, int, 
 
         fig.add_trace(go.Scatter(x=[x_legend], y=[y_legend], mode='text', text=f"<b>{parameters.MODIFICATION_LEGEND_TITLE}</b>", textposition="bottom right", showlegend=False, hoverinfo='none', textfont=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color="black")))
         y_legend -= utils.get_label_height()
-        for i, modification in enumerate(parameters.MODIFICATIONS.values()):
-            # y_legend = height/2 + parameters.SEQUENCE_PLOT_HEIGHT + i*utils.get_label_height()
-            # if parameters.FIGURE_ORIENTATION == 1:
-            #     y_legend = height - ((i+1)*utils.get_label_height())
-            fig.add_trace(go.Scatter(x=[x_legend], y=[y_legend-i*utils.get_label_height()], mode='text', text=modification[0], textposition="bottom right", showlegend=False, hoverinfo='none', textfont=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color=modification[1])))
+
+        labels = [mod for mod in parameters.MODIFICATIONS.values()]
+        sorted_labels = sorted(labels, key=sort_key)
+        for i, mod in enumerate(sorted_labels):
+            fig.add_trace(go.Scatter(x=[x_legend], y=[y_legend-i*utils.get_label_height()], mode='text', text=mod[0], textposition="bottom right", showlegend=False, hoverinfo='none', textfont=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color=mod[1])))
 
     # Sequence
     fig = plot_sequence(fig, region_boundaries, groups_missing)

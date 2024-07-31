@@ -73,10 +73,15 @@ def plot_range_with_label_horizontal(fig: go.Figure, x_0_start: int, x_0_end: in
                             ))
     return fig
 
-def plot_neuropathologies_horizontal(fig, df, x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region):
+def plot_neuropathologies_horizontal(fig, df, x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, ptm):
     x_margin = 0
     if dx % 2 != 0:
         x_margin = 1
+    color_low = parameters.CLEAVAGE_SCALE_COLOR_LOW
+    color_high = parameters.CLEAVAGE_SCALE_COLOR_HIGH
+    if ptm:
+        color_low = parameters.PTM_SCALE_COLOR_LOW
+        color_high = parameters.PTM_SCALE_COLOR_HIGH
     fig.add_shape(type='rect',
                             x0=x_0_neuropathologies - dx//2 - x_margin,
                             y0=y_0_neuropathologies,
@@ -92,7 +97,10 @@ def plot_neuropathologies_horizontal(fig, df, x_0_neuropathologies, y_0_neuropat
                              dx=dx, dy=dy,
                              showscale=False, hoverinfo='none',
                              xgap=1, ygap=1,
-                             colorscale=[[0, '#FFFFFF'], [1, '#452A79']]))
+                             zmin=0,
+                             zmax=1,
+                             zmid=0.5,
+                             colorscale=[[0, color_low], [0.5, '#ffffff'], [1, color_high]]))
     
     fig.add_annotation(x=x_label, y=y_label,
             text=parameters.REGIONS[last_region][3],
@@ -132,8 +140,10 @@ def plot_neuropathology_labels_horizontal(fig: go.Figure, mean_values: pd.DataFr
 def preprocess_neuropathologies(df: pd.DataFrame, ptm: bool):
     df.columns = df.iloc[0]
     if ptm:
+        labels = df.iloc[1:2,2:].values.flatten().tolist()
         df = df.iloc[2:]
     else:
+        labels = df.iloc[0:1,2:].values.flatten().tolist()
         df = df.iloc[1:]
 
     reverse_neuropathology_mapping = {}
@@ -144,13 +154,14 @@ def preprocess_neuropathologies(df: pd.DataFrame, ptm: bool):
     df.iloc[:,1] = df.iloc[:,1].map(reverse_neuropathology_mapping)
     mean_values = df.iloc[:,2:].astype(float).groupby(df.iloc[:,1]).mean()
 
-    return mean_values
+    return mean_values, labels
 
 
 def plot_cleavage_labels(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_cleavage: int, label_plot_height: int, group: str):
     # prepare data:
-    cleavages = cleavage_df.iloc[0:1,2:].values[0].tolist()
-    mean_values = preprocess_neuropathologies(cleavage_df, False)
+    mean_values, cleavages = preprocess_neuropathologies(cleavage_df, False)
+    if group == 'B':
+        mean_values = mean_values.iloc[::-1]
 
     longest_label = ''
     for cleavage in cleavages:
@@ -190,7 +201,7 @@ def plot_cleavage_labels(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_c
                 x_label = x_0_neuropathologies + (x_divider-x_0_neuropathologies)//2 - dx//2
                 y_label = y_0_neuropathologies + len(mean_values.index)*dy + (5+utils.get_label_height()//2) * group_direction
 
-                plot_neuropathologies_horizontal(fig, mean_values.iloc[:,first_cleavage_in_region-last_region:cleavages_visited-last_region], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region)                
+                plot_neuropathologies_horizontal(fig, mean_values.iloc[:,first_cleavage_in_region-last_region:cleavages_visited-last_region], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, False)                
                 
                 fig.add_trace(go.Scatter(x=[x_divider,x_divider],
                             y=[y_0_neuropathologies, y_0_neuropathologies+len(mean_values.index)*dy],
@@ -198,6 +209,7 @@ def plot_cleavage_labels(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_c
                             line=dict(color="black", width=3), showlegend=False, hoverinfo='none'))
             
             else:
+                # TODO implement vertical orientation
                 pass
             while start > last_end:
                 last_region += 1
@@ -231,6 +243,7 @@ def plot_cleavage_labels(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_c
                                     y_label,
                                     label)
         else:
+            # TODO implement vertical orientation
             pass
         cleavages_visited += 1
     # plot neuropathologies for last region
@@ -239,8 +252,9 @@ def plot_cleavage_labels(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_c
         region_length = len(mean_values.iloc[0:1,first_cleavage_in_region-last_region:].columns)
         x_label = x_0_neuropathologies + (region_length * pixels_per_cleavage)//2 - dx//2
         y_label = y_0_neuropathologies + len(mean_values.index)*dy + (5+utils.get_label_height()//2) * group_direction
-        plot_neuropathologies_horizontal(fig, mean_values.iloc[:,first_cleavage_in_region-last_region:], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region)
+        plot_neuropathologies_horizontal(fig, mean_values.iloc[:,first_cleavage_in_region-last_region:], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, False)
     else:
+        # TODO implement vertical orientation
         pass
 
 def plot_line_with_label(fig: go.Figure, x_0: int, x_1: int, y_0: int, y_1: int, y_2: int, y_3: int, y_label: int, label: str, color):
@@ -261,29 +275,32 @@ def plot_line_with_label(fig: go.Figure, x_0: int, x_1: int, y_0: int, y_1: int,
 
 def plot_ptm_labels(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, label_plot_height: int, group: str, second_row: bool):
     group_direction = 1 if group == 'A' else -1
-    ptms = ptm_df.iloc[1:2,2:].values[0].tolist()
+    mean_values, ptms = preprocess_neuropathologies(ptm_df, True)
+    # For debugging purposes
+    #new_row = pd.DataFrame([ptms], columns=mean_values.columns, index=['ptm_position'])
+    #mean_values = pd.concat([new_row, mean_values])
+    mean_values.to_csv('plotting_data_ptms.csv', sep=',')
     label_length = utils.get_label_length(ptms[-1])
-    if second_row:
-        second_row_offset = pixels_per_ptm // 2
-
-    mean_values = preprocess_neuropathologies(ptm_df, True)
+    if group == 'B':
+        mean_values = mean_values.iloc[::-1]
 
     if parameters.FIGURE_ORIENTATION == 0:
         y_0_line = utils.SEQUENCE_BOUNDARIES['y1'] if group == 'A' else utils.SEQUENCE_BOUNDARIES['y0']
         y_1_line = y_0_line + 10 * group_direction
         y_2_line = y_0_line + (label_plot_height - label_length - 10 - constants.DETAILS_PLOT_PTM_RECT_LENGTH - 10) * group_direction
         if second_row:
-            y_2_line = y_0_line + (label_plot_height - 2*(label_length + 10) - constants.DETAILS_PLOT_PTM_RECT_LENGTH) * group_direction
+            y_2_line = y_0_line + (label_plot_height - 2*(label_length + 10) - constants.DETAILS_PLOT_PTM_RECT_LENGTH - 5) * group_direction
     else:
+        # TODO implement vertical orientation
         pass
 
     ptms_visited = 0
     last_end = parameters.REGIONS[0][1]
+    first_ptm_in_region = 0
     last_region = 0
-    region_boundary = False
-    dx = pixels_per_ptm
     if second_row:
-        dx = second_row_offset
+        pixels_per_ptm = pixels_per_ptm // 2
+    dx = pixels_per_ptm
 
     y_0_neuropathologies = y_0_line + (label_plot_height + 10) * group_direction
     vertical_space_left = utils.get_height() - y_0_neuropathologies if group == 'A' else y_0_neuropathologies
@@ -295,22 +312,37 @@ def plot_ptm_labels(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, l
 
     for i, ptm in enumerate(ptms):
         ptm_position = int(ptm[1:])
-        while ptm_position > last_end:
-            last_region += 1
-            last_end = parameters.REGIONS[last_region][1]
-            region_boundary = True
-        if region_boundary:
-            region_boundary = False
+        if ptm_position > last_end:
+            if parameters.FIGURE_ORIENTATION == 0:
+                x_0_neuropathologies = first_ptm_in_region * pixels_per_ptm + utils.SEQUENCE_OFFSET
+                x_divider = ptms_visited * pixels_per_ptm + utils.SEQUENCE_OFFSET
+                if second_row and i % 2 == 1:
+                    x_divider = ptms_visited * pixels_per_ptm + utils.SEQUENCE_OFFSET                    
+                x_label = x_0_neuropathologies + (x_divider-x_0_neuropathologies)//2 - dx//2
+                y_label = y_0_neuropathologies + len(mean_values.index)*dy + (5+utils.get_label_height()//2) * group_direction
+                
+                plot_neuropathologies_horizontal(fig, mean_values.iloc[:,first_ptm_in_region-last_region:ptms_visited-last_region], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, True)
+
+                fig.add_trace(go.Scatter(x=[x_divider,x_divider],
+                            y=[y_0_neuropathologies, y_0_neuropathologies+len(mean_values.index)*dy],
+                            mode='lines',
+                            line=dict(color="black", width=3), showlegend=False, hoverinfo='none'))
+            else:
+                # TODO implement vertical orientation
+                pass
+            while ptm_position > last_end:
+                last_region += 1
+                last_end = parameters.REGIONS[last_region][1]
             ptms_visited += 1
+            first_ptm_in_region = ptms_visited
         if parameters.FIGURE_ORIENTATION == 0:
             x_0_line = ptm_position * utils.PIXELS_PER_PROTEIN + utils.SEQUENCE_OFFSET
             x_1_line = ptms_visited * pixels_per_ptm + utils.SEQUENCE_OFFSET
             y_3_line = y_2_line + 10 * group_direction
             if second_row and i % 2 == 1:
-                x_1_line = (ptms_visited-1) * pixels_per_ptm + utils.SEQUENCE_OFFSET + second_row_offset
+                x_1_line = ptms_visited * pixels_per_ptm + utils.SEQUENCE_OFFSET
                 y_3_line = y_2_line + (label_length + 10 + 5) * group_direction
-            else:
-                ptms_visited += 1
+            ptms_visited += 1
             y_label = y_3_line + (utils.get_label_length(ptm)+10) // 2 * group_direction
             text_color = parameters.MODIFICATIONS[str(ptm_df.iloc[0,i+2])][1]
             plot_line_with_label(fig, x_0_line, x_1_line, y_0_line, y_1_line, y_2_line, y_3_line, y_label, ptm, text_color)
@@ -319,12 +351,35 @@ def plot_ptm_labels(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, l
                       x0 = x_0_rect,
                       x1 = x_0_rect + dx,
                       y0 = y_0_line + (label_plot_height-constants.DETAILS_PLOT_PTM_RECT_LENGTH)*group_direction,
-                      y1 = y_0_line + (label_plot_height)*group_direction,
+                      y1 = y_0_line + label_plot_height*group_direction,
                       fillcolor=text_color,
                       line=dict(width=1, color='grey'),
                       showlegend=False,)
         else:
+            # TODO implement vertical orientation
             pass
+    # plot neuropathologies for last region
+    # TODO continue here
+
+    if parameters.FIGURE_ORIENTATION == 0:
+        x_0_neuropathologies = first_ptm_in_region * pixels_per_ptm + utils.SEQUENCE_OFFSET
+        region_length = len(mean_values.iloc[0:1,first_ptm_in_region-last_region:].columns)
+        x_label = x_0_neuropathologies + (region_length * pixels_per_ptm)//2 - dx//2
+        y_label = y_0_neuropathologies + len(mean_values.index)*dy + (5+utils.get_label_height()//2) * group_direction
+        plot_neuropathologies_horizontal(fig, mean_values.iloc[:,first_ptm_in_region-last_region:], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, True)
+        # red, green, blue = tuple(int(parameters.PTM_SCALE_COLOR[1:], 16) for i in (1, 3, 5))
+        # for i in range(100):
+        #     opac = 1-(i/100)
+        #     fig.add_shape(type='line',
+        #     x0=2.5,
+        #     x1=3.5,
+        #     y0=i*(2/100),
+        #     y1=i*(2/100),
+        #     line=dict(color='rgba({}, {}, {}, {})'.format((red),(green),(blue),(opac)),
+        #             width=5,))
+    else:
+        # TODO implement vertical orientation
+        pass
 
 
 def filter_relevant_modification_sights(ptm_file: str, threshold: int):

@@ -1,12 +1,13 @@
 # Plot Settings
 FIGURE_ORIENTATION = 0  # 0 for horizontal, 1 for vertical, note figure height and width are then automatically swapped
-FIGURE_WIDTH = 1500
+FIGURE_WIDTH = 1200
 FIGURE_HEIGHT = 1000
 
 FONT_SIZE = 11
 
 # Sequence Settings
 # First sequence is from (1, 44), second from (45, 73) and so on
+# Region Name, Region End, Group, Region Abbreviation
 REGIONS = [
     ('N-term', 44, 'A', 'N-term'),
     ('N1', 73, 'B', 'N1'),
@@ -21,8 +22,9 @@ REGIONS = [
 ]
 
 # Modification Settings
-# TODO implement
+# TODO implement for all plots
 MODIFICATION_LEGEND_TITLE = 'PTMs'
+# TODO sort by length
 MODIFICATIONS = {
     'Phospho': ('Phosphorylation', '#000000'),
     'Acetyl': ('Acetylation', '#93478F'),
@@ -45,6 +47,15 @@ INPUT_FILES = {
 }
 
 CLEAVAGE_LABEL_COLOR = '#333333'
+CLEAVAGE_SCALE_COLOR_LOW = '#B35806'
+CLEAVAGE_SCALE_COLOR_MID = '#F7F7F7'
+CLEAVAGE_SCALE_COLOR_HIGH = '#542788'
+CLEAVAGE_LEGEND_TITLE = 'Proteolytic Cleavage Patient Frequency'
+
+PTM_SCALE_COLOR_LOW = '#B35806'
+PTM_SCALE_COLOR_MID = '#F5F5F5'
+PTM_SCALE_COLOR_HIGH = '#01665E'
+PTM_LEGEND_TITLE = 'PTM Patient Frequency'
 
 NEUROPATHOLOGIES = {"CTR": (["CTR"], '#4DAF4A'),
                     "DLB": (["DLB"], '#8DD3C7'),
