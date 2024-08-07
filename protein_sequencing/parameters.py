@@ -24,7 +24,6 @@ REGIONS = [
 # Modification Settings
 # TODO implement for all plots
 MODIFICATION_LEGEND_TITLE = 'PTMs'
-# TODO sort by length
 MODIFICATIONS = {
     'Phospho': ('Phosphorylation', '#000000'),
     'Acetyl': ('Acetylation', '#93478F'),

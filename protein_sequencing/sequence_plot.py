@@ -102,6 +102,8 @@ def create_sequence_plot(region_boundaries: list[tuple[str, int, int, str, int, 
                 x_legend = 0 if parameters.FIGURE_ORIENTATION == 0 else width//2 - parameters.SEQUENCE_PLOT_HEIGHT//2 - utils.get_label_length(longest_text)
                 y_legend = height//2 - parameters.SEQUENCE_PLOT_HEIGHT//2 if parameters.FIGURE_ORIENTATION == 0 else height
         else:
+            x_legend = 0
+            y_legend = 0
             if groups_missing == 'A':
                 if parameters.FIGURE_ORIENTATION == 1:
                     x_legend =  width - parameters.SEQUENCE_PLOT_HEIGHT - utils.get_label_length(longest_text)
@@ -118,8 +120,18 @@ def create_sequence_plot(region_boundaries: list[tuple[str, int, int, str, int, 
 
         labels = [mod for mod in parameters.MODIFICATIONS.values()]
         sorted_labels = sorted(labels, key=sort_key)
+        if legend_positioning == 'B':
+            sorted_labels = sorted_labels[::-1]
         for i, mod in enumerate(sorted_labels):
-            fig.add_trace(go.Scatter(x=[x_legend], y=[y_legend-i*utils.get_label_height()], mode='text', text=mod[0], textposition="bottom right", showlegend=False, hoverinfo='none', textfont=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color=mod[1])))
+            fig.add_trace(
+                go.Scatter(x=[x_legend],
+                           y=[y_legend-i*utils.get_label_height()],
+                           mode='text',
+                           text=mod[0],
+                           textposition="bottom right",
+                           showlegend=False,
+                           hoverinfo='none',
+                           textfont=dict(size=parameters.SEQUENCE_PLOT_FONT_SIZE, color=mod[1])))
 
     # Sequence
     fig = plot_sequence(fig, region_boundaries, groups_missing)
