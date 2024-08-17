@@ -81,10 +81,10 @@ def plot_line_with_label_vertical(fig: go.Figure, x_0: int, x_1: int, x_2: int, 
         color=ptm_color
         if f'{ptm_modification}({label[0]})@{label[1:]}' in parameters.PTMS_TO_HIGHLIGHT:
             fig.add_shape(type='rect',
-                            x0 = x_label-utils.get_label_height()//2-1,
-                            x1 = x_label+utils.get_label_height()//2+1,
-                            y0 = y_1-utils.get_label_length(label)//2-3,
-                            y1 = y_1+utils.get_label_length(label)//2+3,
+                            x0 = x_label-utils.get_label_length(label)//2-3,
+                            x1 = x_label+utils.get_label_length(label)//2+3,
+                            y0 = y_1-utils.get_label_height()//2-1,
+                            y1 = y_1+utils.get_label_height()//2+1,
                             line=dict(width=0),
                             fillcolor=parameters.PTM_HIGHLIGHT_LABEL_COLOR,
                             showlegend=False,)
@@ -500,8 +500,11 @@ def plot_ptms(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, label_p
         if second_row:
             y_2_line = y_0_line + (label_plot_height - 2*(label_length + 10) - constants.DETAILS_PLOT_PTM_RECT_LENGTH - 5) * group_direction
     else:
-        # TODO implement vertical orientation
-        pass
+        x_0_line = utils.SEQUENCE_BOUNDARIES['x1'] if group == 'A' else utils.SEQUENCE_BOUNDARIES['x0']
+        x_1_line = x_0_line + 10 * group_direction
+        x_2_line = x_0_line + (label_plot_height - label_length - 10 - constants.DETAILS_PLOT_PTM_RECT_LENGTH - 10) * group_direction
+        if second_row:
+            x_2_line = x_0_line + (label_plot_height - 2*(label_length + 10) - constants.DETAILS_PLOT_PTM_RECT_LENGTH - 5) * group_direction
 
     ptms_visited = 0
     ptms_in_region = 0
@@ -510,25 +513,35 @@ def plot_ptms(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, label_p
     last_region = 0
     if second_row:
         pixels_per_ptm = pixels_per_ptm // 2
-    dx = pixels_per_ptm
 
-    y_0_neuropathologies = y_0_line + (label_plot_height + 10) * group_direction
-    vertical_space_left = utils.get_height() - y_0_neuropathologies if group == 'A' else y_0_neuropathologies
-    # offset for region label
-    dy_label = offset_region_label_from_angle()
-    vertical_space_left -= dy_label*2 + 5
-    dy = vertical_space_left//len(mean_values.index)*group_direction
+    if parameters.FIGURE_ORIENTATION == 0:
+        dx = pixels_per_ptm
+        y_0_neuropathologies = y_0_line + (label_plot_height + 10) * group_direction
+        vertical_space_left = utils.get_height() - y_0_neuropathologies if group == 'A' else y_0_neuropathologies
+        # offset for region label
+        dy_label = offset_region_label_from_angle()
+        vertical_space_left -= dy_label*2 + 5
+        dy = vertical_space_left//len(mean_values.index)*group_direction
 
-    plot_neuropathology_labels_horizontal(fig, mean_values, y_0_neuropathologies, dy, dx)
+        plot_neuropathology_labels_horizontal(fig, mean_values, y_0_neuropathologies, dy, dx)
+    else:
+        dy = pixels_per_ptm
+        x_0_neuropathologies = x_0_line + (label_plot_height + 10) * group_direction
+        horizontal_space_left = utils.get_width() - x_0_neuropathologies if group == 'A' else x_0_neuropathologies
+        # offset for region label
+        dx_label = offset_region_label_from_angle()
+        horizontal_space_left -= dx_label*2 + 5
+        dx = horizontal_space_left//len(mean_values.index)*group_direction
+
+        plot_neuropathology_labels_vertical(fig, mean_values, x_0_neuropathologies, dx, dy)
+    
 
     for i, ptm in enumerate(ptms):
         ptm_position = int(ptm[1:])
         if ptm_position > last_end:
             if parameters.FIGURE_ORIENTATION == 0:
                 x_0_neuropathologies = first_ptm_in_region * pixels_per_ptm + utils.SEQUENCE_OFFSET
-                x_divider = ptms_visited * pixels_per_ptm + utils.SEQUENCE_OFFSET
-                if second_row and i % 2 == 1:
-                    x_divider = ptms_visited * pixels_per_ptm + utils.SEQUENCE_OFFSET                    
+                x_divider = ptms_visited * pixels_per_ptm + utils.SEQUENCE_OFFSET                  
                 x_label = x_0_neuropathologies + (x_divider-x_0_neuropathologies)//2 - dx//2
                 y_label = y_0_neuropathologies + len(mean_values.index)*dy + (5+utils.get_label_height()//2) * group_direction
                 
@@ -539,8 +552,18 @@ def plot_ptms(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, label_p
                             mode='lines',
                             line=dict(color="black", width=3), showlegend=False, hoverinfo='none'))
             else:
-                # TODO implement vertical orientation
-                pass
+                y_0_neuropathologies = utils.get_height() - first_ptm_in_region * pixels_per_ptm - utils.SEQUENCE_OFFSET
+                y_divider = utils.get_height() - ptms_visited * pixels_per_ptm - utils.SEQUENCE_OFFSET
+                y_label = y_0_neuropathologies - (y_0_neuropathologies - y_divider)//2 + dy//2
+                x_label = x_0_neuropathologies + len(mean_values.index)*dx + (5+utils.get_label_height()//2) * group_direction
+
+                plot_neurophatologies_vertical(fig, mean_values.iloc[:,i-ptms_in_region:i], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, group_direction, True)
+
+                fig.add_trace(go.Scatter(x=[x_0_neuropathologies, x_0_neuropathologies+len(mean_values.index)*dx],
+                            y=[y_divider, y_divider],
+                            mode='lines',
+                            line=dict(color="black", width=3), showlegend=False, hoverinfo='none'))
+            
             while ptm_position > last_end:
                 last_region += 1
                 last_end = parameters.REGIONS[last_region][1]
@@ -555,7 +578,6 @@ def plot_ptms(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, label_p
             if second_row and i % 2 == 1:
                 x_1_line = ptms_visited * pixels_per_ptm + utils.SEQUENCE_OFFSET
                 y_3_line = y_2_line + (label_length + 10 + 5) * group_direction
-            ptms_visited += 1
             y_label = y_3_line + (utils.get_label_length(ptm)+10) // 2 * group_direction
             text_color = parameters.MODIFICATIONS[str(ptm_df.iloc[0,i+2])][1]
             plot_line_with_label_horizontal(fig, x_0_line, x_1_line, y_0_line, y_1_line, y_2_line, y_3_line, y_label, ptm, True, text_color, str(ptm_df.iloc[0,i+2]))
@@ -569,8 +591,25 @@ def plot_ptms(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, label_p
                       line=dict(width=1, color='grey'),
                       showlegend=False,)
         else:
-            # TODO implement vertical orientation
-            pass
+            y_0_line = utils.get_height() - ptm_position * utils.PIXELS_PER_PROTEIN - utils.SEQUENCE_OFFSET
+            y_1_line = utils.get_height() - ptms_visited * pixels_per_ptm - utils.SEQUENCE_OFFSET
+            x_3_line = x_2_line + 10 * group_direction
+            if second_row and i % 2 == 1:
+                y_1_line = utils.get_height() - ptms_visited * pixels_per_ptm - utils.SEQUENCE_OFFSET
+                x_3_line = x_2_line + (label_length + 10 + 5) * group_direction
+            x_label = x_3_line + (utils.get_label_length(ptm)+10) // 2 * group_direction
+            text_color = parameters.MODIFICATIONS[str(ptm_df.iloc[0,i+2])][1]
+            plot_line_with_label_vertical(fig, x_0_line, x_1_line, x_2_line, x_3_line, y_0_line, y_1_line, x_label, ptm, True, text_color, str(ptm_df.iloc[0,i+2]))
+            y_0_rect = y_1_line - dy//2
+            fig.add_shape(type='rect',
+                      x0 = x_0_line + (label_plot_height-constants.DETAILS_PLOT_PTM_RECT_LENGTH)*group_direction,
+                      x1 = x_0_line + label_plot_height*group_direction,
+                      y0 = y_0_rect,
+                      y1 = y_0_rect + dy,
+                      fillcolor=text_color,
+                      line=dict(width=1, color='grey'),
+                      showlegend=False,)
+        ptms_visited += 1
     # plot neuropathologies for last region
     if parameters.FIGURE_ORIENTATION == 0:
         x_0_neuropathologies = first_ptm_in_region * pixels_per_ptm + utils.SEQUENCE_OFFSET
@@ -582,8 +621,14 @@ def plot_ptms(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, label_p
         create_custome_colorscale(fig, vertical_space_left, group_direction, x_0_neuropathologies, y_0_neuropathologies, region_length, pixels_per_ptm, True)
         
     else:
-        # TODO implement vertical orientation
-        pass
+        y_0_neuropathologies = utils.get_height() - first_ptm_in_region * pixels_per_ptm - utils.SEQUENCE_OFFSET
+        region_length = len(mean_values.iloc[0:1,first_ptm_in_region-last_region:].columns)
+        y_label = y_0_neuropathologies - (region_length * pixels_per_ptm)//2 + dy//2
+        x_label = x_0_neuropathologies + len(mean_values.index)*dx + (5+utils.get_label_height()//2) * group_direction
+        plot_neurophatologies_vertical(fig, mean_values.iloc[:,len(ptms)-ptms_in_region:], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, group_direction, True)
+
+        create_custome_colorscale(fig, horizontal_space_left, group_direction, x_0_neuropathologies, y_0_neuropathologies, region_length, pixels_per_ptm, True)
+        
 def create_custome_colorscale(fig: go.Figure, vertical_space_left: int, group_direction: int, x_0_neuropathologies: int, y_0_neuropathologies: int, region_length: int, pixels_per_step: int, ptm: bool):
     if ptm:
         colorscale = [
@@ -617,7 +662,7 @@ def create_custome_colorscale(fig: go.Figure, vertical_space_left: int, group_di
         dy = 15
         y_scale = dy + 5
         x_offset = vertical_space_left // 2 * group_direction
-        y_bar = y_0_neuropathologies - region_length * pixels_per_step - y_scale
+        y_bar = y_0_neuropathologies - region_length * pixels_per_step - 5
         x_bar = x_0_neuropathologies + x_offset - dx * 50
     fig.add_trace(go.Heatmap(
         x0=x_bar,
@@ -651,7 +696,7 @@ def create_custome_colorscale(fig: go.Figure, vertical_space_left: int, group_di
         y_legend_title = y_bar + scale_height
     else:
         x_legend_title = x_bar + dx * 50
-        y_legend_title = y_scale - utils.get_label_height()
+        y_legend_title = y_scale - utils.get_label_height() * (label.count('<br>')+1)
     fig.add_annotation(x=x_legend_title,
                         y=y_legend_title,
                         text=label,
@@ -739,7 +784,7 @@ def create_details_plot(input_file: str | os.PathLike, output_path: str | os.Pat
         else:
             raise ValueError('Too many PTMs to fit in plot')
         
-        #plot_ptms(fig, ptm_df, pixels_per_ptm, label_plot_height, ptm_group, second_row)
+        plot_ptms(fig, ptm_df, pixels_per_ptm, label_plot_height, ptm_group, second_row)
     
     utils.show_plot(fig, output_path)
 

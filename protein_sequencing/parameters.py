@@ -71,7 +71,7 @@ NEUROPATHOLOGIES = {"CTR": (["CTR"], '#4DAF4A'),
                     "AD": (["AD", "NPCAD"], '#E41A1C'),
                     "fAD": (["fAD"], '#9C0B0C'),}
 
-REGION_LABEL_ANGLE_NEUROPATHOLOGIES = 0
+REGION_LABEL_ANGLE_NEUROPATHOLOGIES = 30
 
 # Input Output Settings
 FASTA_INPUT_FILE = 'data/uniprot_data/tau_isoforms2N4R.fasta'
@@ -85,7 +85,7 @@ FONT = 'Arial'
 # TODO remove margins and auto calculate based on legend
 LEFT_MARGIN = 0.065
 RIGHT_MARGIN = 0.025
-TOP_MARGIN = 0.065
+TOP_MARGIN = 0.069
 BOTTOM_MARGIN = 0.025
 
 # Sequence Plot
