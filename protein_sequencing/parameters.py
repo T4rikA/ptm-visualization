@@ -13,7 +13,7 @@ REGIONS = [
     ('N1', 73, 'B', 'N1'),
     ('N2', 102, 'B', 'N2'),
     ('2N4R-Tau', 150, 'A', 'Mid'),
-    ('Proline-rich region', 241, 'B', 'PRR'),
+    ('Proline-rich region', 241, 'B', 'extremely long label'),
     ('R1', 272, 'B', 'R1'),
     ('R2', 303, 'B', 'R2'),
     ('R3', 334, 'B', 'R3'),
@@ -28,11 +28,15 @@ MODIFICATIONS = {
     'Phospho': ('Phosphorylation', '#000000'),
     'Acetyl': ('Acetylation', '#93478F'),
     'Methyl': ('Methylation', '#C35728'),
-    'GG': ('Ubiquitination', '#7AB77C'),
+    'GG': ('Ubiquitination', '#548056'),
     'Citrullination': ('Citrullination', '#FF17E3'),
 }
 
-LIST_TO_HIGHLIGHT = ['Phospho(S)@68']
+# TODO implement for all plots
+PTMS_TO_HIGHLIGHT = ['Phospho(S)@68', 'Citrullination(R)@242', 'GG(K)@254', 'Acetyl(K)@267', 'Methyl(K)@311']
+PTM_HIGHLIGHT_LABEL_COLOR = '#cfcfcf'
+CLEAVAGES_TO_HIGHLIGHT = ['2-4', '7-13']
+CLEAVAGE_HIGHLIGHT_LABEL_COLOR = '#ff0000'
 
 EXCLUDED_MODIFICATIONS = {'Q': None,
                           'X': None,
@@ -65,6 +69,8 @@ NEUROPATHOLOGIES = {"CTR": (["CTR"], '#4DAF4A'),
                     "CTE": (["CTE"], '#1740B6'),
                     "AD": (["AD", "NPCAD"], '#E41A1C'),
                     "fAD": (["fAD"], '#9C0B0C'),}
+
+REGION_LABEL_ANGLE_NEUROPATHOLOGIES = -30
 
 # Input Output Settings
 FASTA_INPUT_FILE = 'data/uniprot_data/tau_isoforms2N4R.fasta'

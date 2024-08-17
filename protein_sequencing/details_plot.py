@@ -63,6 +63,10 @@ def plot_range_with_label_horizontal(fig: go.Figure, x_0_start: int, x_0_end: in
                             mode='lines',
                             fill='toself',
                             line=dict(color="black", width=1), showlegend=False, hoverinfo='none'))
+    
+    color = parameters.CLEAVAGE_LABEL_COLOR
+    if label in parameters.CLEAVAGES_TO_HIGHLIGHT:
+        color = parameters.CLEAVAGE_HIGHLIGHT_LABEL_COLOR
     fig.add_annotation(x=x_1, y=y_label,
                         text=label,
                         showarrow=False,
@@ -70,18 +74,20 @@ def plot_range_with_label_horizontal(fig: go.Figure, x_0_start: int, x_0_end: in
                         font=dict(
                             family=parameters.FONT,
                             size=parameters.SEQUENCE_PLOT_FONT_SIZE,
-                            color=parameters.CLEAVAGE_LABEL_COLOR,
+                            color=color,
                             ))
     return fig
 
-def plot_neuropathologies_horizontal(fig: go.Figure, df: pd.DataFrame, x_0_neuropathologies: int, y_0_neuropathologies: int, dx: int, dy: int, x_label: int, y_label: int, last_region: int, ptm: bool):
+def plot_neuropathologies_horizontal(fig: go.Figure, df: pd.DataFrame, x_0_neuropathologies: int, y_0_neuropathologies: int, dx: int, dy: int, x_label: int, y_label: int, last_region: int, group_dircetion: int, ptm: bool):
     x_margin = 0
     if dx % 2 != 0:
         x_margin = 1
     color_low = parameters.CLEAVAGE_SCALE_COLOR_LOW
+    color_mid = parameters.CLEAVAGE_SCALE_COLOR_MID
     color_high = parameters.CLEAVAGE_SCALE_COLOR_HIGH
     if ptm:
         color_low = parameters.PTM_SCALE_COLOR_LOW
+        color_mid = parameters.PTM_SCALE_COLOR_MID
         color_high = parameters.PTM_SCALE_COLOR_HIGH
     fig.add_shape(type='rect',
                             x0=x_0_neuropathologies - dx//2 - x_margin,
@@ -101,11 +107,18 @@ def plot_neuropathologies_horizontal(fig: go.Figure, df: pd.DataFrame, x_0_neuro
                              zmin=0,
                              zmax=1,
                              zmid=0.5,
-                             colorscale=[[0, color_low], [0.5, '#ffffff'], [1, color_high]]))
-    
-    fig.add_annotation(x=x_label, y=y_label,
+                             colorscale=[[0, color_low], [0.5, color_mid], [1, color_high]]))
+    yanchor = 'bottom'
+    xanchor = 'left'
+    if group_dircetion == -1:
+        yanchor = 'top'
+        xanchor = 'right'
+    fig.add_annotation(x=x_label-utils.get_label_height()*group_dircetion, y=y_label-int((5/offset_region_label_from_angle())*group_dircetion),    
             text=parameters.REGIONS[last_region][3],
             showarrow=False,
+            textangle=parameters.REGION_LABEL_ANGLE_NEUROPATHOLOGIES,
+            xanchor=xanchor,
+            yanchor=yanchor,
             font=dict(
                 family=parameters.FONT,
                 size=parameters.SEQUENCE_PLOT_FONT_SIZE,
@@ -125,11 +138,33 @@ def plot_neuropathology_labels_horizontal(fig: go.Figure, mean_values: pd.DataFr
                       line=dict(width=0),
                       showlegend=False,
                       layer='below',)
-        # based on https://stackoverflow.com/questions/3942878/
-        red, green, blue = tuple(int(parameters.NEUROPATHOLOGIES[neuropathology][1][i:i+2], 16) for i in (1, 3, 5))
-        color = '#000000' if red*0.299 + green*0.587 + blue*0.114 > 130 else '#ffffff'
+        color = utils.get_label_color(neuropathology)
 
         fig.add_annotation(x=utils.SEQUENCE_OFFSET - dx//2 - 50, y=y_0_rect + dy//2,
+            text=neuropathology,
+            showarrow=False,
+            align='center',
+            font=dict(
+                family=parameters.FONT,
+                size=parameters.SEQUENCE_PLOT_FONT_SIZE,
+                color=color))
+
+def plot_neurophatologies_vertical(fig: go.Figure, mean_values: pd.DataFrame, x_0_neuropathologies: int, dx: int, dy: int):
+    for i, neuropathology in enumerate(mean_values.index):
+        x_0_rect = x_0_neuropathologies + i*dx
+        fig.add_shape(type='rect',
+                      x0 = x_0_rect,
+                      x1 = x_0_rect + dx,
+                      y0 = utils.SEQUENCE_OFFSET - dy//2 - 100,
+                      y1 = utils.SEQUENCE_OFFSET - dy//2,
+                      fillcolor=parameters.NEUROPATHOLOGIES[neuropathology][1],
+                      line=dict(width=0),
+                      showlegend=False,
+                      layer='below',)
+        
+        color = utils.get_label_color(neuropathology)
+
+        fig.add_annotation(x=x_0_rect + dx//2, y=utils.SEQUENCE_OFFSET - dy//2 - 50,
             text=neuropathology,
             showarrow=False,
             align='center',
@@ -158,8 +193,22 @@ def preprocess_neuropathologies(df: pd.DataFrame, ptm: bool):
 
     return mean_values, labels
 
+def offset_region_label_from_angle():
+    longest_label = ''
+    for i, (_, _, _, region_label_short) in enumerate(parameters.REGIONS):
+        if utils.get_label_length(region_label_short) > utils.get_label_length(longest_label):
+            longest_label = region_label_short
+        
+    length = utils.get_label_length(longest_label)
+    height = utils.get_label_height()
 
-def plot_cleavage_labels(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_cleavage: int, label_plot_height: int, group: str):
+    angle_radians = math.radians(parameters.REGION_LABEL_ANGLE_NEUROPATHOLOGIES)
+    dy = abs((length / 2) * math.sin(angle_radians)) + abs((height / 2) * math.cos(angle_radians))
+    
+    return int(dy)
+
+
+def plot_cleavages(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_cleavage: int, label_plot_height: int, group: str):
     # prepare data:
     mean_values, cleavages = preprocess_neuropathologies(cleavage_df, False)
     if group == 'B':
@@ -184,8 +233,9 @@ def plot_cleavage_labels(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_c
     vertical_space_left = utils.get_height() - y_0_neuropathologies if group == 'A' else y_0_neuropathologies
     # offset for border around heatmap
     vertical_space_left -= 2
-    # offset for label
-    vertical_space_left -= utils.get_label_height() + 5
+    # offset for label for region
+    dy_label = offset_region_label_from_angle()
+    vertical_space_left -= dy_label*2 + 5
     dx = pixels_per_cleavage
     dy = vertical_space_left//len(mean_values.index)*group_direction
 
@@ -203,7 +253,7 @@ def plot_cleavage_labels(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_c
                 x_label = x_0_neuropathologies + (x_divider-x_0_neuropathologies)//2 - dx//2
                 y_label = y_0_neuropathologies + len(mean_values.index)*dy + (5+utils.get_label_height()//2) * group_direction
 
-                plot_neuropathologies_horizontal(fig, mean_values.iloc[:,first_cleavage_in_region-last_region:cleavages_visited-last_region], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, False)                
+                plot_neuropathologies_horizontal(fig, mean_values.iloc[:,first_cleavage_in_region-last_region:cleavages_visited-last_region], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, group_direction, False)                
                 
                 fig.add_trace(go.Scatter(x=[x_divider,x_divider],
                             y=[y_0_neuropathologies, y_0_neuropathologies+len(mean_values.index)*dy],
@@ -254,18 +304,27 @@ def plot_cleavage_labels(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_c
         region_length = len(mean_values.iloc[0:1,first_cleavage_in_region-last_region:].columns)
         x_label = x_0_neuropathologies + (region_length * pixels_per_cleavage)//2 - dx//2
         y_label = y_0_neuropathologies + len(mean_values.index)*dy + (5+utils.get_label_height()//2) * group_direction
-        plot_neuropathologies_horizontal(fig, mean_values.iloc[:,first_cleavage_in_region-last_region:], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, False)
+        plot_neuropathologies_horizontal(fig, mean_values.iloc[:,first_cleavage_in_region-last_region:], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, group_direction, False)
 
         create_custome_colorscale(fig, vertical_space_left, group_direction, x_0_neuropathologies, y_0_neuropathologies, region_length, pixels_per_cleavage, False)
     else:
         # TODO implement vertical orientation
         pass
 
-def plot_line_with_label(fig: go.Figure, x_0: int, x_1: int, y_0: int, y_1: int, y_2: int, y_3: int, y_label: int, label: str, color):
+def plot_line_with_label(fig: go.Figure, x_0: int, x_1: int, y_0: int, y_1: int, y_2: int, y_3: int, y_label: int, label: str, color: str, modification: str):
     fig.add_trace(go.Scatter(x=[x_0, x_0, x_1, x_1],
                             y=[y_0, y_1, y_2, y_3],
                             mode='lines',
                             line=dict(color=color, width=1), showlegend=False, hoverinfo='none'))
+    if f'{modification}({label[0]})@{label[1:]}' in parameters.PTMS_TO_HIGHLIGHT:
+        fig.add_shape(type='rect',
+                        x0 = x_1-utils.get_label_height()//2-1,
+                        x1 = x_1+utils.get_label_height()//2+1,
+                        y0 = y_label-utils.get_label_length(label)//2-3,
+                        y1 = y_label+utils.get_label_length(label)//2+3,
+                        line=dict(width=0),
+                        fillcolor=parameters.PTM_HIGHLIGHT_LABEL_COLOR,
+                        showlegend=False,)
     fig.add_annotation(x=x_1, y=y_label,
                         text=label,
                         showarrow=False,
@@ -277,7 +336,7 @@ def plot_line_with_label(fig: go.Figure, x_0: int, x_1: int, y_0: int, y_1: int,
                             ))
     return fig
 
-def plot_ptm_labels(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, label_plot_height: int, group: str, second_row: bool):
+def plot_ptms(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, label_plot_height: int, group: str, second_row: bool):
     group_direction = 1 if group == 'A' else -1
     mean_values, ptms = preprocess_neuropathologies(ptm_df, True)
     # For debugging purposes
@@ -311,8 +370,9 @@ def plot_ptm_labels(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, l
 
     y_0_neuropathologies = y_0_line + (label_plot_height + 10) * group_direction
     vertical_space_left = utils.get_height() - y_0_neuropathologies if group == 'A' else y_0_neuropathologies
-    # offset for label
-    vertical_space_left -= utils.get_label_height() + 5
+    # offset for region label
+    dy_label = offset_region_label_from_angle()
+    vertical_space_left -= dy_label*2 + 5
     dy = vertical_space_left//len(mean_values.index)*group_direction
 
     plot_neuropathology_labels_horizontal(fig, mean_values, y_0_neuropathologies, dy, dx)
@@ -328,7 +388,7 @@ def plot_ptm_labels(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, l
                 x_label = x_0_neuropathologies + (x_divider-x_0_neuropathologies)//2 - dx//2
                 y_label = y_0_neuropathologies + len(mean_values.index)*dy + (5+utils.get_label_height()//2) * group_direction
                 
-                plot_neuropathologies_horizontal(fig, mean_values.iloc[:,i-ptms_in_region:i], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, True)
+                plot_neuropathologies_horizontal(fig, mean_values.iloc[:,i-ptms_in_region:i], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, group_direction, True)
 
                 fig.add_trace(go.Scatter(x=[x_divider,x_divider],
                             y=[y_0_neuropathologies, y_0_neuropathologies+len(mean_values.index)*dy],
@@ -354,7 +414,7 @@ def plot_ptm_labels(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, l
             ptms_visited += 1
             y_label = y_3_line + (utils.get_label_length(ptm)+10) // 2 * group_direction
             text_color = parameters.MODIFICATIONS[str(ptm_df.iloc[0,i+2])][1]
-            plot_line_with_label(fig, x_0_line, x_1_line, y_0_line, y_1_line, y_2_line, y_3_line, y_label, ptm, text_color)
+            plot_line_with_label(fig, x_0_line, x_1_line, y_0_line, y_1_line, y_2_line, y_3_line, y_label, ptm, text_color, str(ptm_df.iloc[0,i+2]))
             x_0_rect = x_1_line - dx//2
             fig.add_shape(type='rect',
                       x0 = x_0_rect,
@@ -373,7 +433,7 @@ def plot_ptm_labels(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, l
         region_length = len(mean_values.iloc[0:1,first_ptm_in_region-last_region:].columns)
         x_label = x_0_neuropathologies + (region_length * pixels_per_ptm)//2 - dx//2
         y_label = y_0_neuropathologies + len(mean_values.index)*dy + (5+utils.get_label_height()//2) * group_direction
-        plot_neuropathologies_horizontal(fig, mean_values.iloc[:,len(ptms)-ptms_in_region:], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, True)
+        plot_neuropathologies_horizontal(fig, mean_values.iloc[:,len(ptms)-ptms_in_region:], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, group_direction, True)
         
         create_custome_colorscale(fig, vertical_space_left, group_direction, x_0_neuropathologies, y_0_neuropathologies, region_length, pixels_per_ptm, True)
         
@@ -490,7 +550,7 @@ def create_details_plot(input_file: str | os.PathLike, output_path: str | os.Pat
         #         mode='lines',
         #         line=dict(color='red'),))
     else:
-        plot_width = 5000
+        plot_width = parameters.FIGURE_HEIGHT-utils.SEQUENCE_BOUNDARIES['y0']-25
 
     label_plot_height = 150
     
@@ -501,7 +561,7 @@ def create_details_plot(input_file: str | os.PathLike, output_path: str | os.Pat
         pixels_per_cleavage = plot_width // (len(cleavages) + present_regions.count(True))
         assert(pixels_per_cleavage > parameters.FONT_SIZE)
 
-        plot_cleavage_labels(fig, cleavage_df, pixels_per_cleavage, label_plot_height, cleavage_group)
+        plot_cleavages(fig, cleavage_df, pixels_per_cleavage, label_plot_height, cleavage_group)
 
     if ptm_file_path:
         ptm_df = filter_relevant_modification_sights(ptm_file_path, parameters.MODIFICATION_THRESHOLD)
@@ -517,7 +577,7 @@ def create_details_plot(input_file: str | os.PathLike, output_path: str | os.Pat
         else:
             raise ValueError('Too many PTMs to fit in plot')
         
-        plot_ptm_labels(fig, ptm_df, pixels_per_ptm, label_plot_height, ptm_group, second_row)
+        plot_ptms(fig, ptm_df, pixels_per_ptm, label_plot_height, ptm_group, second_row)
     
     utils.show_plot(fig, output_path)
 
