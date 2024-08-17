@@ -605,12 +605,12 @@ def create_custome_colorscale(fig: go.Figure, vertical_space_left: int, group_di
     if parameters.FIGURE_ORIENTATION == 0:
         dx = 15
         dy = 1
-        y_scale = dy * 100 + 10 + utils.get_label_height() * label.count('<br>')
-        y_offset = (vertical_space_left - y_scale) // 2 * group_direction
+        scale_height = dy * 100 + 10 + utils.get_label_height() * label.count('<br>')
+        y_offset = (vertical_space_left - scale_height) // 2 * group_direction
         x_bar = x_0_neuropathologies + region_length * pixels_per_step + 10
         y_bar = y_0_neuropathologies + y_offset
         if group_direction == -1:
-            y_bar -= y_scale
+            y_bar -= scale_height
     else:
         z = z.T
         dx = 1
@@ -633,9 +633,9 @@ def create_custome_colorscale(fig: go.Figure, vertical_space_left: int, group_di
         percentage_label = f'{i*50}%'
         if parameters.FIGURE_ORIENTATION == 0:
             x_scale = x_bar + 15 + utils.get_label_length(percentage_label)//2
-            y_scale = y_bar + i*100/2
+            y_scale = y_bar + i*100*dy/2
         else:
-            x_scale = x_bar + i*100/2
+            x_scale = x_bar + i*100*dx/2
             y_scale = y_bar - utils.get_label_height()
         fig.add_annotation(x=x_scale,
                             y=y_scale,
@@ -648,7 +648,7 @@ def create_custome_colorscale(fig: go.Figure, vertical_space_left: int, group_di
                                 ))
     if parameters.FIGURE_ORIENTATION == 0:
         x_legend_title = x_bar + 15
-        y_legend_title = y_bar + y_scale
+        y_legend_title = y_bar + scale_height
     else:
         x_legend_title = x_bar + dx * 50
         y_legend_title = y_scale - utils.get_label_height()
