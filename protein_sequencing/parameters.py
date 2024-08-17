@@ -13,7 +13,7 @@ REGIONS = [
     ('N1', 73, 'B', 'N1'),
     ('N2', 102, 'B', 'N2'),
     ('2N4R-Tau', 150, 'A', 'Mid'),
-    ('Proline-rich region', 241, 'B', 'extremely long label'),
+    ('Proline-rich region', 241, 'B', 'PRR'),
     ('R1', 272, 'B', 'R1'),
     ('R2', 303, 'B', 'R2'),
     ('R3', 334, 'B', 'R3'),
@@ -70,7 +70,7 @@ NEUROPATHOLOGIES = {"CTR": (["CTR"], '#4DAF4A'),
                     "AD": (["AD", "NPCAD"], '#E41A1C'),
                     "fAD": (["fAD"], '#9C0B0C'),}
 
-REGION_LABEL_ANGLE_NEUROPATHOLOGIES = -30
+REGION_LABEL_ANGLE_NEUROPATHOLOGIES = 30
 
 # Input Output Settings
 FASTA_INPUT_FILE = 'data/uniprot_data/tau_isoforms2N4R.fasta'

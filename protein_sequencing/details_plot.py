@@ -113,10 +113,10 @@ def plot_neuropathologies_horizontal(fig: go.Figure, df: pd.DataFrame, x_0_neuro
     if group_dircetion == -1:
         yanchor = 'top'
         xanchor = 'right'
-    fig.add_annotation(x=x_label-utils.get_label_height()*group_dircetion, y=y_label-int((5/offset_region_label_from_angle())*group_dircetion),    
+    fig.add_annotation(x=x_label-utils.get_label_height()*group_dircetion, y=y_label-int((7/offset_region_label_from_angle())*group_dircetion),    
             text=parameters.REGIONS[last_region][3],
             showarrow=False,
-            textangle=parameters.REGION_LABEL_ANGLE_NEUROPATHOLOGIES,
+            textangle=-parameters.REGION_LABEL_ANGLE_NEUROPATHOLOGIES,
             xanchor=xanchor,
             yanchor=yanchor,
             font=dict(
@@ -202,7 +202,7 @@ def offset_region_label_from_angle():
     length = utils.get_label_length(longest_label)
     height = utils.get_label_height()
 
-    angle_radians = math.radians(parameters.REGION_LABEL_ANGLE_NEUROPATHOLOGIES)
+    angle_radians = math.radians(-parameters.REGION_LABEL_ANGLE_NEUROPATHOLOGIES)
     dy = abs((length / 2) * math.sin(angle_radians)) + abs((height / 2) * math.cos(angle_radians))
     
     return int(dy)
