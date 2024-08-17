@@ -35,7 +35,7 @@ MODIFICATIONS = {
 # TODO implement for all plots
 PTMS_TO_HIGHLIGHT = ['Phospho(S)@68', 'Citrullination(R)@242', 'GG(K)@254', 'Acetyl(K)@267', 'Methyl(K)@311']
 PTM_HIGHLIGHT_LABEL_COLOR = '#cfcfcf'
-CLEAVAGES_TO_HIGHLIGHT = ['2-4', '7-13']
+CLEAVAGES_TO_HIGHLIGHT = ['2-4', '15']
 CLEAVAGE_HIGHLIGHT_LABEL_COLOR = '#ff0000'
 
 EXCLUDED_MODIFICATIONS = {'Q': None,
@@ -70,7 +70,7 @@ NEUROPATHOLOGIES = {"CTR": (["CTR"], '#4DAF4A'),
                     "AD": (["AD", "NPCAD"], '#E41A1C'),
                     "fAD": (["fAD"], '#9C0B0C'),}
 
-REGION_LABEL_ANGLE_NEUROPATHOLOGIES = 30
+REGION_LABEL_ANGLE_NEUROPATHOLOGIES = 0
 
 # Input Output Settings
 FASTA_INPUT_FILE = 'data/uniprot_data/tau_isoforms2N4R.fasta'
@@ -84,7 +84,7 @@ FONT = 'Arial'
 # TODO remove margins and auto calculate based on legend
 LEFT_MARGIN = 0.065
 RIGHT_MARGIN = 0.025
-TOP_MARGIN = 0.055
+TOP_MARGIN = 0.065
 BOTTOM_MARGIN = 0.025
 
 # Sequence Plot

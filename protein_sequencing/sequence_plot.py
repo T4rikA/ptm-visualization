@@ -141,7 +141,6 @@ def create_sequence_plot(region_boundaries: list[tuple[str, int, int, str, int, 
 def plot_sequence(fig, region_boundaries, groups_missing):
     sequence_x0, sequence_y0 = 0,0
     x0, x1, y0, y1 = 0,0,0,0
-
     if parameters.FIGURE_ORIENTATION == 0:
         y0 = utils.get_height()//2 - parameters.SEQUENCE_PLOT_HEIGHT//2
         if groups_missing:
