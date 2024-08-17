@@ -1,5 +1,5 @@
 # Plot Settings
-FIGURE_ORIENTATION = 0  # 0 for horizontal, 1 for vertical, note figure height and width are then automatically swapped
+FIGURE_ORIENTATION = 1  # 0 for horizontal, 1 for vertical, note figure height and width are then automatically swapped
 FIGURE_WIDTH = 1200
 FIGURE_HEIGHT = 1000
 
@@ -53,7 +53,8 @@ CLEAVAGE_LABEL_COLOR = '#333333'
 CLEAVAGE_SCALE_COLOR_LOW = '#B35806'
 CLEAVAGE_SCALE_COLOR_MID = '#F7F7F7'
 CLEAVAGE_SCALE_COLOR_HIGH = '#542788'
-CLEAVAGE_LEGEND_TITLE = 'Proteolytic<br>Cleavage<br>Patient<br>Frequency'
+#CLEAVAGE_LEGEND_TITLE = 'Proteolytic<br>Cleavage<br>Patient<br>Frequency'
+CLEAVAGE_LEGEND_TITLE = 'Proteolytic Cleavage Patient Frequency'
 
 PTM_SCALE_COLOR_LOW = '#B35806'
 PTM_SCALE_COLOR_MID = '#F5F5F5'

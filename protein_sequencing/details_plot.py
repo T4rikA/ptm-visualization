@@ -123,9 +123,9 @@ def plot_range_with_label_horizontal(fig: go.Figure, x_0_start: int, x_0_end: in
                             ))
     return fig
 
-def plot_range_with_label_vertical(fig: go.Figure, x_0: int, x_1: int, x_2: int, x_3: int, y_0: int, y_1: int, x_label: int, label: str):
-    fig.add_trace(go.Scatter(x=[x_0, x_1, x_2, x_3, x_0],
-                            y=[y_0, y_0, y_1, y_1, y_0],
+def plot_range_with_label_vertical(fig: go.Figure, x_0: int, x_1: int, x_2: int, x_3: int, y_0_start: int, y_0_end: int, y_1: int, x_label: int, label: str):
+    fig.add_trace(go.Scatter(x=[x_0, x_1, x_2, x_3, x_2, x_1, x_0],
+                            y=[y_0_start, y_0_start, y_1, y_1, y_1, y_0_end, y_0_end],
                             mode='lines',
                             fill='toself',
                             line=dict(color="black", width=1), showlegend=False, hoverinfo='none'))
@@ -420,7 +420,7 @@ def plot_cleavages(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_cleavag
                                  x_0_line, x_1_line,
                                  y_0_line, y_1_line, y_2_line, y_3_line,
                                  y_label,
-                                 label, False, None)
+                                 label, False, None, None)
             else:
                 label = f'{start}-{end}'
                 x_0_start_line = start * utils.PIXELS_PER_PROTEIN + utils.SEQUENCE_OFFSET
@@ -446,7 +446,21 @@ def plot_cleavages(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_cleavag
                                  x_0_line, x_1_line, x_2_line, x_3_line,
                                  y_0_line, y_1_line,
                                  x_label,
-                                 label)
+                                 label, False, None, None)
+            else:
+                label = f'{start}-{end}'
+                y_0_start_line = utils.get_height() - start * utils.PIXELS_PER_PROTEIN - utils.SEQUENCE_OFFSET
+                y_0_end_line = utils.get_height() - end * utils.PIXELS_PER_PROTEIN - utils.SEQUENCE_OFFSET
+                y_1_line = utils.get_height() - cleavages_visited * pixels_per_cleavage - utils.SEQUENCE_OFFSET
+                x_3_line = x_0_line + (label_plot_height - utils.get_label_length(label)) * group_direction
+                x_label = x_3_line + (utils.get_label_length(label) // 2 + 5) * group_direction
+
+                plot_range_with_label_vertical(fig,
+                                    x_0_line, x_1_line, x_2_line, x_3_line,
+                                    y_0_start_line, y_0_end_line,
+                                    y_1_line,
+                                    x_label,
+                                    label)
         cleavages_visited += 1
     # plot neuropathologies for last region
     if parameters.FIGURE_ORIENTATION == 0:
@@ -458,8 +472,13 @@ def plot_cleavages(fig: go.Figure, cleavage_df: pd.DataFrame, pixels_per_cleavag
 
         create_custome_colorscale(fig, vertical_space_left, group_direction, x_0_neuropathologies, y_0_neuropathologies, region_length, pixels_per_cleavage, False)
     else:
-        # TODO implement vertical orientation
-        pass
+        y_0_neuropathologies = utils.get_height() - first_cleavage_in_region * pixels_per_cleavage - utils.SEQUENCE_OFFSET
+        region_length = len(mean_values.iloc[0:1,first_cleavage_in_region-last_region:].columns)
+        y_label = y_0_neuropathologies - (region_length * pixels_per_cleavage)//2 + dy//2
+        x_label = x_0_neuropathologies + len(mean_values.index)*dx + (5+utils.get_label_height()//2) * group_direction
+        plot_neurophatologies_vertical(fig, mean_values.iloc[:,first_cleavage_in_region-last_region:], x_0_neuropathologies, y_0_neuropathologies, dx, dy, x_label, y_label, last_region, group_direction, False)
+
+        create_custome_colorscale(fig, horizontal_space_left, group_direction, x_0_neuropathologies, y_0_neuropathologies, region_length, pixels_per_cleavage, False)
 
 def plot_ptms(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, label_plot_height: int, group: str, second_row: bool):
     group_direction = 1 if group == 'A' else -1
@@ -582,26 +601,44 @@ def create_custome_colorscale(fig: go.Figure, vertical_space_left: int, group_di
         label = parameters.CLEAVAGE_LEGEND_TITLE
     # Create a heatmap
     z = np.linspace(0, 1, 100).reshape(100, 1)
-    y_height_scale = 100 + 10 + utils.get_label_height() * label.count('<br>')
-    y_offset = (vertical_space_left - y_height_scale) // 2 * group_direction
-    x_pos_scale = x_0_neuropathologies + region_length * pixels_per_step + 10
-    y_pos_scale = y_0_neuropathologies + y_offset
-    if group_direction == -1:
-        y_pos_scale -= y_height_scale
+
+    if parameters.FIGURE_ORIENTATION == 0:
+        dx = 15
+        dy = 1
+        y_scale = dy * 100 + 10 + utils.get_label_height() * label.count('<br>')
+        y_offset = (vertical_space_left - y_scale) // 2 * group_direction
+        x_bar = x_0_neuropathologies + region_length * pixels_per_step + 10
+        y_bar = y_0_neuropathologies + y_offset
+        if group_direction == -1:
+            y_bar -= y_scale
+    else:
+        z = z.T
+        dx = 1
+        dy = 15
+        y_scale = dy + 5
+        x_offset = vertical_space_left // 2 * group_direction
+        y_bar = y_0_neuropathologies - region_length * pixels_per_step - y_scale
+        x_bar = x_0_neuropathologies + x_offset - dx * 50
     fig.add_trace(go.Heatmap(
-        x0=x_pos_scale,
-        y0=y_pos_scale,
+        x0=x_bar,
+        y0=y_bar,
         z=z,
-        dx=15,
-        dy=1,
+        dx=dx,
+        dy=dy,
         colorscale=colorscale,
         showscale=False,
         hoverinfo='none',
     ))
     for i in range(3):
         percentage_label = f'{i*50}%'
-        fig.add_annotation(x=x_pos_scale + 15 + utils.get_label_length(percentage_label)//2,
-                            y=y_pos_scale + i*100/2,
+        if parameters.FIGURE_ORIENTATION == 0:
+            x_scale = x_bar + 15 + utils.get_label_length(percentage_label)//2
+            y_scale = y_bar + i*100/2
+        else:
+            x_scale = x_bar + i*100/2
+            y_scale = y_bar - utils.get_label_height()
+        fig.add_annotation(x=x_scale,
+                            y=y_scale,
                             text=percentage_label,
                             showarrow=False,
                             font=dict(
@@ -609,16 +646,21 @@ def create_custome_colorscale(fig: go.Figure, vertical_space_left: int, group_di
                                 size=parameters.SEQUENCE_PLOT_FONT_SIZE,
                                 color='black',
                                 ))
-    
-    fig.add_annotation(x=x_pos_scale + 15,
-                            y=y_pos_scale + y_height_scale,
-                            text=label,
-                            showarrow=False,
-                            font=dict(
-                                family=parameters.FONT,
-                                size=parameters.SEQUENCE_PLOT_FONT_SIZE,
-                                color='black',
-                                ))
+    if parameters.FIGURE_ORIENTATION == 0:
+        x_legend_title = x_bar + 15
+        y_legend_title = y_bar + y_scale
+    else:
+        x_legend_title = x_bar + dx * 50
+        y_legend_title = y_scale - utils.get_label_height()
+    fig.add_annotation(x=x_legend_title,
+                        y=y_legend_title,
+                        text=label,
+                        showarrow=False,
+                        font=dict(
+                            family=parameters.FONT,
+                            size=parameters.SEQUENCE_PLOT_FONT_SIZE,
+                            color='black',
+                            ))
 
 def filter_relevant_modification_sights(ptm_file: str, threshold: int):
     df = pd.read_csv(ptm_file)
@@ -697,7 +739,7 @@ def create_details_plot(input_file: str | os.PathLike, output_path: str | os.Pat
         else:
             raise ValueError('Too many PTMs to fit in plot')
         
-        plot_ptms(fig, ptm_df, pixels_per_ptm, label_plot_height, ptm_group, second_row)
+        #plot_ptms(fig, ptm_df, pixels_per_ptm, label_plot_height, ptm_group, second_row)
     
     utils.show_plot(fig, output_path)
 
