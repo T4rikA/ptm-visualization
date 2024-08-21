@@ -84,6 +84,7 @@ def create_sequence_plot(region_boundaries: list[tuple[str, int, int, str, int, 
         yaxis=dict(range=[0, height], autorange=False),
         plot_bgcolor="white",
         font_family=parameters.FONT,
+        margin=dict(l=0, r=0, t=0, b=0),
     )
     fig.update_xaxes(visible=False)
     fig.update_yaxes(visible=False)

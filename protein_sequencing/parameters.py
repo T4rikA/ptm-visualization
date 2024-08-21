@@ -1,5 +1,5 @@
 # Plot Settings
-FIGURE_ORIENTATION = 1  # 0 for horizontal, 1 for vertical, note figure height and width are then automatically swapped
+FIGURE_ORIENTATION = 0  # 0 for horizontal, 1 for vertical, note figure height and width are then automatically swapped
 FIGURE_WIDTH = 1200
 FIGURE_HEIGHT = 1000
 
@@ -45,16 +45,16 @@ EXCLUDED_MODIFICATIONS = {'Q': None,
 MODIFICATION_THRESHOLD = 10
 
 INPUT_FILES = {
-    'A': ('Cleavage', 'data/chris/cleavage_plot/PPc_COMPLETE_cutoff_0-05FDR_reformat_XX_C_collmean_tarik.csv'),
-    'B': ('PTM', 'data/chris/cleavage_plot/PPc_COMPLETE_cutoff_0-05FDR_reformat_XX_tarik.csv'),
+    'B': ('Cleavage', 'data/chris/cleavage_plot/PPc_COMPLETE_cutoff_0-05FDR_reformat_XX_C_collmean_tarik.csv'),
+    'A': ('PTM', 'data/chris/cleavage_plot/PPc_COMPLETE_cutoff_0-05FDR_reformat_XX_tarik.csv'),
 }
 
 CLEAVAGE_LABEL_COLOR = '#333333'
 CLEAVAGE_SCALE_COLOR_LOW = '#B35806'
 CLEAVAGE_SCALE_COLOR_MID = '#F7F7F7'
 CLEAVAGE_SCALE_COLOR_HIGH = '#542788'
-#CLEAVAGE_LEGEND_TITLE = 'Proteolytic<br>Cleavage<br>Patient<br>Frequency'
-CLEAVAGE_LEGEND_TITLE = 'Proteolytic Cleavage Patient Frequency'
+CLEAVAGE_LEGEND_TITLE = 'Proteolytic<br>Cleavage<br>Patient<br>Frequency'
+#CLEAVAGE_LEGEND_TITLE = 'Proteolytic Cleavage Patient Frequency'
 
 PTM_SCALE_COLOR_LOW = '#B35806'
 PTM_SCALE_COLOR_MID = '#F5F5F5'

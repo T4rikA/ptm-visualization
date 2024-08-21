@@ -42,10 +42,13 @@ def get_present_regions_ptm(ptm_df: pd.DataFrame):
     
 
 def plot_line_with_label_horizontal(fig: go.Figure, x_0: int, x_1: int, y_0: int, y_1: int, y_2: int, y_3: int, y_label: int, label: str, ptm: bool, ptm_color: str | None = None, ptm_modification: str | None = None):
+    line_color = "black"
+    if ptm:
+        line_color = ptm_color
     fig.add_trace(go.Scatter(x=[x_0, x_0, x_1, x_1],
                             y=[y_0, y_1, y_2, y_3],
                             mode='lines',
-                            line=dict(color="black", width=1), showlegend=False, hoverinfo='none'))
+                            line=dict(color=line_color, width=1), showlegend=False, hoverinfo='none'))
     if ptm:
         color=ptm_color
         if f'{ptm_modification}({label[0]})@{label[1:]}' in parameters.PTMS_TO_HIGHLIGHT:
@@ -73,10 +76,13 @@ def plot_line_with_label_horizontal(fig: go.Figure, x_0: int, x_1: int, y_0: int
     return fig
 
 def plot_line_with_label_vertical(fig: go.Figure, x_0: int, x_1: int, x_2: int, x_3: int, y_0: int, y_1: int, x_label: int, label: str, ptm: bool, ptm_color: str | None = None, ptm_modification: str | None = None):
+    line_color = "black"
+    if ptm:
+        line_color = ptm_color
     fig.add_trace(go.Scatter(x=[x_0, x_1, x_2, x_3],
                             y=[y_0, y_0, y_1, y_1],
                             mode='lines',
-                            line=dict(color="black", width=1), showlegend=False, hoverinfo='none'))
+                            line=dict(color=line_color, width=1), showlegend=False, hoverinfo='none'))
     if ptm:
         color=ptm_color
         if f'{ptm_modification}({label[0]})@{label[1:]}' in parameters.PTMS_TO_HIGHLIGHT:
@@ -511,8 +517,6 @@ def plot_ptms(fig: go.Figure, ptm_df: pd.DataFrame, pixels_per_ptm: int, label_p
     last_end = parameters.REGIONS[0][1]
     first_ptm_in_region = 0
     last_region = 0
-    if second_row:
-        pixels_per_ptm = pixels_per_ptm // 2
 
     if parameters.FIGURE_ORIENTATION == 0:
         dx = pixels_per_ptm
@@ -724,8 +728,27 @@ def filter_relevant_modification_sights(ptm_file: str, threshold: int):
     
     return result_df
 
-
-
+def calculate_legend_space(ptm: bool):
+    if parameters.FIGURE_ORIENTATION == 0:
+        longest_label = ''
+        if ptm:
+            for string in parameters.PTM_LEGEND_TITLE.split('<br>'):
+                if utils.get_label_length(string) > utils.get_label_length(longest_label):
+                    longest_label = string
+        else:
+            for string in parameters.CLEAVAGE_LEGEND_TITLE.split('<br>'):
+                if utils.get_label_length(string) > utils.get_label_length(longest_label):
+                    longest_label = string
+        if utils.get_label_length('100%') + 10 > utils.get_label_length(longest_label):
+            return utils.get_label_length('100%') + 10
+        return utils.get_label_length(longest_label)
+    else:
+        if ptm:
+            title_height = utils.get_label_height() * (parameters.PTM_LEGEND_TITLE.count('<br')+1)
+        else:
+            title_height = utils.get_label_height() * (parameters.CLEAVAGE_LEGEND_TITLE.count('<br')+1)
+        return utils.get_label_height() + title_height + 10
+    
 def create_details_plot(input_file: str | os.PathLike, output_path: str | os.PathLike):
     legend = None
     if not 'A' in parameters.INPUT_FILES.keys():
@@ -752,12 +775,12 @@ def create_details_plot(input_file: str | os.PathLike, output_path: str | os.Pat
             case 'PTM':
                 ptm_file_path = parameters.INPUT_FILES[group][1]
                 ptm_group = group
+    
     if parameters.FIGURE_ORIENTATION == 0:
-        # TODO calculate plot width based on legend to remove magic number 25
-        plot_space = utils.get_width()-utils.SEQUENCE_BOUNDARIES['x0']-25
+        plot_space = utils.get_width()-utils.SEQUENCE_BOUNDARIES['x0']
     else:
         # first we calculate the missing space above the sequence and then subtract it from the total height
-        plot_space = utils.get_height() - (utils.get_height()-utils.SEQUENCE_BOUNDARIES['y0']) - 25
+        plot_space = utils.get_height() - (utils.get_height()-utils.SEQUENCE_BOUNDARIES['y0'])
 
     label_plot_height = 150
     
@@ -765,8 +788,9 @@ def create_details_plot(input_file: str | os.PathLike, output_path: str | os.Pat
         cleavage_df = pd.read_csv(cleavage_file_path)
         present_regions = get_present_regions_cleavage(cleavage_df)
         cleavages = cleavage_df.iloc[0:1,2:].values[0].tolist()
-        pixels_per_cleavage = plot_space // (len(cleavages) + present_regions.count(True))
-        assert(pixels_per_cleavage > parameters.FONT_SIZE)
+        cleavage_space = plot_space - calculate_legend_space(False)
+        pixels_per_cleavage = cleavage_space // (len(cleavages) + present_regions.count(True)-1)
+        assert(pixels_per_cleavage >= parameters.FONT_SIZE)
 
         plot_cleavages(fig, cleavage_df, pixels_per_cleavage, label_plot_height, cleavage_group)
 
@@ -774,15 +798,14 @@ def create_details_plot(input_file: str | os.PathLike, output_path: str | os.Pat
         ptm_df = filter_relevant_modification_sights(ptm_file_path, parameters.MODIFICATION_THRESHOLD)
         present_regions = get_present_regions_ptm(ptm_df)
         number_of_ptms = len(ptm_df.columns)
-        number_of_regions = present_regions.count(True)-1
+        number_of_dividers = present_regions.count(True)-1
         second_row = False
-        if (number_of_ptms + number_of_regions) * utils.get_label_height() <= plot_space:
-            pixels_per_ptm = plot_space // (number_of_ptms + number_of_regions)
-        elif (number_of_ptms + 2*number_of_regions) * utils.get_label_height() <= 2 * plot_space:
-            pixels_per_ptm = plot_space // (math.ceil(number_of_ptms/2) + number_of_regions)
-            second_row = True
-        else:
+        ptm_space = plot_space - calculate_legend_space(True)
+        pixels_per_ptm = ptm_space // (number_of_ptms + number_of_dividers)
+        if (number_of_ptms + number_of_dividers) * utils.get_label_height() > 2*ptm_space:
             raise ValueError('Too many PTMs to fit in plot')
+        elif (number_of_ptms + 2*number_of_dividers) * utils.get_label_height() > ptm_space:
+            second_row = True
         
         plot_ptms(fig, ptm_df, pixels_per_ptm, label_plot_height, ptm_group, second_row)
     
